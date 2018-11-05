@@ -1,0 +1,18 @@
+<component name="libraryTable">
+  <library name="Maven: hu.elte.fds:BlaBoO:1.0">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/hu/elte/fds/BlaBoO/1.0/BlaBoO-1.0.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/hu/elte/fds/BlaBoO/1.0/BlaBoO-1.0-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/hu/elte/fds/BlaBoO/1.0/BlaBoO-1.0-sources.jar!/" />
+      <root url="file://$PROJECT_DIR$/../BlackBoxOptimizer/BlackBoxOptimizerDistCoordinator/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../BlackBoxOptimizer/BlackBoxOptimizerDistSlave/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../BlackBoxOptimizer/BlackBoxOptimizerDistSlave/target/slave/public/examples/Schwefel_java" />
+      <root url="file://$PROJECT_DIR$/../BlackBoxOptimizer/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../BlackBoxOptimizer/src/main/resources/public/examples/Schwefel_java" />
+    </SOURCES>
+  </library>
+</component>
