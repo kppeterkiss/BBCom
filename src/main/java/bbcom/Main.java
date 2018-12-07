@@ -46,7 +46,7 @@ public class Main {
             c.start();
             c.join();
             System.out.println("=======================================");
-            System.out.println("NODE ADDRESS => "+c.getProcessConnectionDescriptor(c.getName()));
+            System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName()), SparkHTTPServlet.HttpConnection.class));
             System.out.println("=======================================");
 
 

@@ -31,7 +31,7 @@
         </plugins>
     </build>
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/com.rabbitmq/amqp-client -->
+        <!-- https://mvnrepository.com/artifact/com.rabbitmq/amqp-client-->
         <dependency>
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
@@ -76,6 +76,11 @@
             <artifactId>DistCommIF</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>hu.elte.fds</groupId>
+            <artifactId>BlaBoO</artifactId>
+            <version>1.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.github.docker-java/docker-java -->
