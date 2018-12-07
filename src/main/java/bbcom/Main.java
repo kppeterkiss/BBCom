@@ -33,6 +33,12 @@ public class Main {
                 s_num = Integer.parseInt(args[++i]);
         }*/
 
+        Boolean coordinator = true;
+        String mainCoordinatorAddress = "localhost";
+        if(args.length>0) {
+            mainCoordinatorAddress = args[0];
+            coordinator = false;
+        }
         File b = new File(moduleStoreLocation);
         String absolute = b.getCanonicalPath();
         Map<Class<? extends Coordinator>,String> coordinatorClasses = null;
@@ -47,9 +53,9 @@ public class Main {
             String s_id = "slave";
             Map<String,List<SparkHTTPServlet.Address>> addresses = new HashMap<>();
             addresses.put(s_id,new LinkedList<SparkHTTPServlet.Address>());
-            addresses.get(s_id).add(new SparkHTTPServlet.Address(nodeName,c_id,"http://localhost:"+Integer.toString(port)+"/com"));
+            addresses.get(s_id).add(new SparkHTTPServlet.Address(nodeName,c_id,"http://"+mainCoordinatorAddress+":"+Integer.toString(port)+"/com"));
 
-            SparkHTTPServlet.Address coordinatoraddress = new SparkHTTPServlet.Address(nodeName,s_id,"http://localhost:"+Integer.toString(port)+"/com");
+           // SparkHTTPServlet.Address coordinatoraddress = new SparkHTTPServlet.Address(nodeName,s_id,"http://localhost:"+Integer.toString(port)+"/com");
             //addresses.put(s_id,new LinkedList<SparkHTTPServlet.Address>());
             //addresses.get(s_id).add(new SparkHTTPServlet.Address("node1",c_id,"http://localhost:"+Integer.toString(port)+"/com"));
 
@@ -59,11 +65,15 @@ public class Main {
             int i = 0;
        //     for(int i = 0;i<c_num;i++)
        //         startServer(coordinatorClasses.keySet().toArray(new Class[0])[0],c,c_id+Integer.toString(i));
-                startServer(coordinatorClasses.keySet().toArray(new Class[0])[0],c,c_id);
-            Thread.sleep(1000);
+            if(coordinator) {
+                startServer(coordinatorClasses.keySet().toArray(new Class[0])[0], c, c_id);
+            }
+            else
+                startSlave(slaveClasses.keySet().toArray(new Class[0])[0],c,s_id+"0",addresses.get(s_id).get(0));
+
        //     for(int i = 0;i<s_num;i++)
        //         startSlave(slaveClasses.keySet().toArray(new Class[0])[0],c,s_id+Integer.toString(i),addresses.get(s_id).get(0));
-                startSlave(slaveClasses.keySet().toArray(new Class[0])[0],c,s_id,addresses.get(s_id).get(0));
+                startSlave(slaveClasses.keySet().toArray(new Class[0])[0],c,s_id+"0",addresses.get(s_id).get(0));
 
 
         } catch (ClassNotFoundException e) {
@@ -71,8 +81,6 @@ public class Main {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 

@@ -134,7 +134,7 @@ public class SparkHTTPServlet extends Com {
         try (final DatagramSocket socket = new DatagramSocket()) {
             socket.connect(InetAddress.getByName("8.8.8.8"), this.port);
             this.inetAddress = "http://"+socket.getLocalAddress().getHostAddress()+":"+port+"/com";
-            //this.inetAddress = "http://"+getPublicIP()+":"+port+"/com";
+            this.inetAddress = "http://"+getPublicIP()+":"+port+"/com";
             //getPublicIP();
             this.send("CONNECT "+ new Gson().toJson(new Address(this.id,processId,this.inetAddress),Address.class), processId);
         } catch (UnknownHostException e) {

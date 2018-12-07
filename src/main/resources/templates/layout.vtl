@@ -1,0 +1,236 @@
+<!--
+        Copyright 2018 Peter Kiss and David Fonyo
+
+        Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License.
+        You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+        Unless required by applicable law or agreed to in writing, software
+        distributed under the License is distributed on an "AS IS" BASIS,
+        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        See the License for the specific language governing permissions and
+        limitations under the License.
+ -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Title of the document</title>
+    <title>BBO</title>
+    <!--<link rel='stylesheet' href='http://localhost:4567/js/css/bootstrap.min.css'/>-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+
+    <!--<link rel='stylesheet' href='http://localhost:4567/js/css/freelancer.min.css'/>-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://localhost:4567/js/scripts.js"></script>
+
+    <style> /* set the CSS */
+    .line {
+        fill: none;
+        stroke: steelblue;
+        stroke-width: 2px;
+    }
+    .disabled_link {
+        pointer-events: none;
+        cursor: default;
+        opacity: 0.6;
+    }
+    .navbar {
+        margin-bottom: 0;
+        border-radius: 0;
+    }
+    hr.style2 {
+        border-top: 3px double #8c8b8b;
+    }
+
+    /* Set height of the grid so .sidenav can be 100% (adjust as needed) */
+    .row.content {height: 450px}
+
+    /* Set gray background color and 100% height */
+    .sidenav {
+        padding-top: 20px;
+        background-color: #f1f1f1;
+        height: 100vh;
+    }
+
+    /* Set black background color, white text and some padding */
+    footer  {position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        padding: 1rem;
+        background-color: #efefef;
+        text-align: center;
+    #objFileBrowser,#objFileName{
+        display:inline;
+    }
+    #use_iterations,#iterationCount{
+        display:inline;
+    }
+    #chosenfile,#cfn,#newbutton{
+        display:inline;
+    }
+    .container{
+        height:100%;
+    }
+    .paramname{
+
+        background-color : #d1d1d1;
+
+    }
+
+
+    /* On small screens, set height to 'auto' for sidenav and grid */
+    @media screen and (max-width: 767px) {
+
+        .row.content {
+            height:auto;
+            float: left;
+        }
+        .container-fluid * {
+            float: left;
+            padding: 100px;
+        }
+    }
+
+    </style>
+
+</head>
+
+<!-- <body onload = "load();">-->
+<body>
+<nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#"><img height="30" src ="http://localhost:4567/files/elte_plus_ik.png"/></a>
+            <!--<a class="navbar-brand" href="#">Logo</a>-->
+        </div>
+        <div class="collapse navbar-collapse" id="myNavbar">
+            <ul class="nav navbar-nav">
+                <li class="active"><a href='http://localhost:4567/hello'>Start task</a></li>
+                <li><a href="http://localhost:4567/results">Results</a></li>
+                <li><a id="stopLink" href="http://localhost:4567/stop">Stop server</a></li>
+                <!--<li><a id="load" href="http://localhost:4567/stop">Load experiment</a></li>-->
+                <li><a href="#" onclick="performClick('chosenfile');">Load task</a>
+                    <!--<input type="file" id="theFile" style="display:none"/>-->
+                    <form id ="setup_file_form" action = "/loadsetup" method="post" enctype="multipart/form-data" style="display:none">
+                        <input id ="chosenfile" name="chosenfile" type="file" accept=".json"/>
+                        <input type="text" id ="cfn" name="cfn"/>
+                        <button>OK</button>
+                    </form>
+                </li>
+                <li ><a id="savefilenamedisp" href="#" class="disabled_link" onclick="askForName('savefilenamedisp')">Save as: experiments/${filename}</a></li>
+
+
+                <!--<li> <button type="button" onclick="navbar-toggle" data-toggle="collapse" data-target="#myNavbar"></li>-->
+                <!--<li><a href="readme.md">ReadMe</a></li>
+                <li><a href="#">Contact</a></li>-->
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="https://github.com/kppeterkiss/BlackBoxOptimizer">GitHub</a></li>
+                <li><a href="http://t-labs.elte.hu">T-Labs@ELTE</a></li>
+                <li><a href="http://www.laboratories.telekom.com/public/english/pages/default.aspx">T-Labs</a></li>
+
+                <li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>-->
+            </ul>
+        </div>
+    </div>
+</nav>
+<!--<nav class="navbar navbar-inverse">
+ <div class="container-fluid">
+     <ul class="nav navbar-nav">
+     <li class="active"><label for="file_to_save">File</label><input id = "file_to_save">Start task</input></li>
+     </ul>
+
+ </div>
+ </nav>-->
+<script>
+    $("#stopLink").on('click', function(e) {
+        // prevent the default action, in this case the following of a link
+        e.preventDefault();
+        // capture the href attribute of the a element
+        var url = $(this).attr('href');
+        $("#cont").empty();
+        $("#cont").append("<h1>Good Bye!<h1>");
+
+        // perform a get request using ajax to the captured href value
+        $.get(url, function() {
+            // success
+        });
+    });
+
+    function performClick(elemId) {
+        var elem = document.getElementById(elemId);
+        if(elem && document.createEvent) {
+            var evt = document.createEvent("MouseEvents");
+            evt.initEvent("click", true, false);
+            elem.dispatchEvent(evt);
+        }
+    }
+
+    function askForName(elemid){
+        if($("#"+elemid).hasClass("disabled_link")){
+            return;
+        }
+        var x;
+        var x=prompt("Enter file name",$("#savefilename").val());
+        if (x!=null && x!=""){
+            x = x.trim();
+            if(!x.endsWith(".json"))
+                x +=  ".json";
+            $("#savefilename").val(x/*.replace(".json","")*/);
+            $("#savefilenamedisp").text("Save as: experiments/"+x);
+        }
+
+
+    }
+
+    $("#setup_file_form").on('change',function(e){
+        $(this).submit();
+    });
+
+
+    $("#load").on('click', function(e) {
+        // prevent the default action, in this case the following of a link
+        e.preventDefault();
+        var elem = document.getElementById(elemId);
+        if(elem && document.createEvent) {
+            var evt = document.createEvent("MouseEvents");
+            evt.initEvent("click", true, false);
+            elem.dispatchEvent(evt);
+        }
+        // capture the href attribute of the a element
+        var url = $(this).attr('href');
+        $("#cont").empty();
+        $("#cont").append("<h1>Good Bye!<h1>");
+
+        // perform a get request using ajax to the captured href value
+        $.get(url, function() {
+            // success
+        });
+    });
+</script>
+<!-- begin inner template-->
+<!-- <div class="container">-->
+    #parse( $template )
+<!-- </div>-->
+<!-- end inner template-->
+<!--<footer class="container-fluid">
+    <p>BBO</p>
+</footer>-->
+</body>
+</html>
