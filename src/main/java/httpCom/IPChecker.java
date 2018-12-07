@@ -27,7 +27,7 @@ public class IPChecker {
         }
     }*/
     public static String getIp() {
-        String ip;
+        String ip="élkag";
         try {
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
             while (interfaces.hasMoreElements()) {
@@ -44,15 +44,16 @@ public class IPChecker {
                     if (addr instanceof Inet6Address) continue;
 
                     ip = addr.getHostAddress();
-                    //System.out.println(iface.getDisplayName() + " " + ip);
+                    System.out.println(iface.getDisplayName() + " " + ip);
                     //System.out.println(ip);
-                    return ip;
+
                 }
             }
+            return ip;
         } catch (SocketException e) {
             throw new RuntimeException(e);
         }
-        return null;
+
 
     }
 
