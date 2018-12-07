@@ -242,7 +242,7 @@ public class SparkHTTPServlet extends Com {
                 else if (receivedMsg.startsWith("INSTANTIATE")){
                     String[] sa = receivedMsg.split(" ");
                     String moduleName = sa[1];
-                    String args =receivedMsg.substring(0,receivedMsg.lastIndexOf(moduleName));
+                    String args =receivedMsg.substring(receivedMsg.lastIndexOf(moduleName),receivedMsg.length());
                     this.launchModule(moduleName,args.split(" "));
                 }else // actual message to be handled by the running processes
                     this.messages.get(to).add(request.body());
