@@ -48,19 +48,20 @@ public class Main {
             System.out.println("=======================================");
             System.out.println("NODE ADDRESS => "+c.getProcessConnectionDescriptor(c.getName()));
             System.out.println("=======================================");
-            System.out.println("REMOTE ADDRESS");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            SparkHTTPServlet.HttpConnection rc = new Gson().fromJson(reader.readLine(), SparkHTTPServlet.HttpConnection.class);
+
 
             if(mode.equals("primary")) {
                 try {
+                    System.out.println("REMOTE ADDRESS");
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                    SparkHTTPServlet.HttpConnection rc = new Gson().fromJson(reader.readLine(), SparkHTTPServlet.HttpConnection.class);
                     String cName = c.launchModule("BBoCoordinator", new String[]{"-apath", "modules/coordinator/"});
                     //--instantiate  -> sending request to nodes
                     //one local worker
-                    String wName = c.launchModule("BBOSlave", null);
+                    String wName = c.launchModule("BBOSlave", new String[]{});
                     //two rwmote worker
-                    String rwName = c.launchRemoteModule(rc, "BBOSlave", null);
-                    String rwName2 = c.launchRemoteModule(rc, "BBOSlave", null);
+                    String rwName = c.launchRemoteModule(rc, "BBOSlave", new String[]{});
+                    String rwName2 = c.launchRemoteModule(rc, "BBOSlave", new String[]{});
 
                     //String wName2 = c.launchModule("BBOSlave",null);
                     SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName);
