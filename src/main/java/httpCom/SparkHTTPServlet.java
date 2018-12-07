@@ -233,7 +233,7 @@ public class SparkHTTPServlet extends Com {
                         a.type = HttpConnectionType.OUPUT;
                     this.connections.get(to).add(a);
                 }
-                if(receivedMsg.startsWith("DISCONNECT")){
+                else if(receivedMsg.startsWith("DISCONNECT")){
                     HttpConnection a = new Gson().fromJson(receivedMsg.split(" ")[1], HttpConnection.class);
                     this.connections.forEach((key, value) -> value.remove(a));
 

@@ -52,20 +52,23 @@ public class Main {
 
             if(mode.equals("primary")) {
                 try {
-                    System.out.println("REMOTE ADDRESS");
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-                    SparkHTTPServlet.HttpConnection rc = new Gson().fromJson(reader.readLine(), SparkHTTPServlet.HttpConnection.class);
+
                     String cName = c.launchModule("BBoCoordinator", new String[]{"-apath", "modules/coordinator/"});
                     //--instantiate  -> sending request to nodes
                     //one local worker
                     String wName = c.launchModule("BBOSlave", new String[]{});
+
+                     /*
                     //two rwmote worker
-                    String rwName = c.launchRemoteModule(rc, "BBOSlave", new String[]{});
+
+                    System.out.println("REMOTE ADDRESS");
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+                    SparkHTTPServlet.HttpConnection rc = new Gson().fromJson(reader.readLine(), SparkHTTPServlet.HttpConnection.class);
+                   String rwName = c.launchRemoteModule(rc, "BBOSlave", new String[]{});
                     String rwName2 = c.launchRemoteModule(rc, "BBOSlave", new String[]{});
 
                     //String wName2 = c.launchModule("BBOSlave",null);
-                    SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName);
-                    conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
+
 
 
                     SparkHTTPServlet.HttpConnection rconn1 = (SparkHTTPServlet.HttpConnection) c.calculateRemoteProcessConnectionDescriptor(rwName, rc);
@@ -73,7 +76,10 @@ public class Main {
 
                     // the coordinator sets up connections to the workers
                     c.addBidirectionalChannel(rconn1, cName);
-                    c.addBidirectionalChannel(rconn2, cName);
+                    c.addBidirectionalChannel(rconn2, cName);*/
+
+                    SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName);
+                    conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
                     c.addBidirectionalChannel(conn, cName);
 
                 } catch (NoSuchMethodException e) {
