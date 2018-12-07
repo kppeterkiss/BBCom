@@ -668,6 +668,18 @@ public class SparkHTTPServlet extends Com {
         public String getHostAddress(){
             return "http://"+url+":"+port+"/com";
         }
+
+        @Override
+        public String toString() {
+            return "HttpAddress{" +
+                    "peerId='" + peerId + '\'' +
+                    ", processId='" + processId + '\'' +
+                    ", url='" + url + '\'' +
+                    ", port=" + port +
+                    '}';
+        }
+
+
     }
 
    /* public static class connrctionRequest{
@@ -705,6 +717,15 @@ public class SparkHTTPServlet extends Com {
        public int hashCode() {
 
            return Objects.hash(httpAddress);
+       }
+
+       @Override
+       public String toString() {
+           return "HttpConnection{" +
+                   "eType=" + eType +
+                   ", type=" + type +
+                   ", httpAddress=" + httpAddress +
+                   '}';
        }
    }
 }
