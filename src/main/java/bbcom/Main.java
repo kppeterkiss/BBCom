@@ -19,8 +19,12 @@ public class Main {
     public static void main(String[] args) throws IOException {
 
         String mode = "";
-        if(args.length>=1)
+        String connectionUrl = "";
+        if(args.length==1)
             mode = args[0];
+        if(args.length==2 && args[0].equals("-c")){
+            connectionUrl = args[1];
+        }
         //SparkHTTPServlet.HttpConnection rc= new Gson().fromJson(remoteNodeAddr, SparkHTTPServlet.HttpConnection.class);
 
         /*String line = "";
@@ -49,6 +53,8 @@ public class Main {
             System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName()), SparkHTTPServlet.HttpConnection.class));
             System.out.println("=======================================");
 
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            String userinput ="";
 
             if(mode.equals("primary")) {
                 try {
@@ -58,12 +64,12 @@ public class Main {
                     //one local worker
                     String wName = c.launchModule("BBOSlave", new String[]{});
 
-                     /*
+
                     //two rwmote worker
 
                     System.out.println("REMOTE ADDRESS");
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-                    SparkHTTPServlet.HttpConnection rc = new Gson().fromJson(reader.readLine(), SparkHTTPServlet.HttpConnection.class);
+                    userinput = reader.readLine();
+                    SparkHTTPServlet.HttpConnection rc = new Gson().fromJson(userinput, SparkHTTPServlet.HttpConnection.class);
                    String rwName = c.launchRemoteModule(rc, "BBOSlave", new String[]{});
                     String rwName2 = c.launchRemoteModule(rc, "BBOSlave", new String[]{});
 
@@ -76,7 +82,7 @@ public class Main {
 
                     // the coordinator sets up connections to the workers
                     c.addBidirectionalChannel(rconn1, cName);
-                    c.addBidirectionalChannel(rconn2, cName);*/
+                    c.addBidirectionalChannel(rconn2, cName);
 
                     SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName);
                     conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
@@ -87,7 +93,25 @@ public class Main {
                 } catch (InvocationTargetException e) {
                     e.printStackTrace();
                 }
+            }// we connect to an existing node
+            else if(!connectionUrl.equals("")){
+                SparkHTTPServlet.HttpConnection nodeConnectionToConnect = new Gson().fromJson(connectionUrl, SparkHTTPServlet.HttpConnection.class);
+                c.addBidirectionalChannel(nodeConnectionToConnect, c.getName());
+
+
             }
+            else if(mode.equals("starter")){
+                String c_name = "";
+                while (!userinput.equals("STOP")) {
+                    userinput = reader.readLine();
+                    //at the coordinator node we build up the network
+                    if(userinput.toUpperCase().equals("BUILD"))
+                        c_name = ((SparkHTTPServlet)c).buildNetwork();
+                }
+                ((SparkHTTPServlet)c).shotDownNetwork(c_name);
+            }
+
+
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
@@ -95,6 +119,10 @@ public class Main {
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
     }
