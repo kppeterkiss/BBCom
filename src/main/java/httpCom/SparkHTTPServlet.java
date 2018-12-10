@@ -243,6 +243,7 @@ public class SparkHTTPServlet extends Com {
                     String[] sa = receivedMsg.split(" ");
                     String moduleName = sa[1];
                     String args =receivedMsg.substring(receivedMsg.lastIndexOf(moduleName),receivedMsg.length());
+                    //String args[]
                     this.launchModule(moduleName,args.split(" "));
                 }else // actual message to be handled by the running processes
                     this.messages.get(to).add(request.body());
