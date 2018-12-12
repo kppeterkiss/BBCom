@@ -18,6 +18,7 @@ import spark.Spark;
 
 import java.io.*;
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import java.util.*;
 import spark.template.velocity.VelocityTemplateEngine;
@@ -50,6 +51,38 @@ public class SparkHTTPServlet extends Com {
 
     public  Map<String,List<HttpConnection>> getConnections() {
         return connections;
+    }
+
+    // TODO: 2018. 12. 09.  incorportate  map and other things
+    public String buildNetwork() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+
+        String cName = this.launchModule("BBoCoordinator", new String[]{"-apath", "modules/coordinator/"});
+        //--instantiate  -> sending request to nodes
+        //one local worker
+        String wName = this.launchModule("BBOSlave", new String[]{});
+        // this supposed to return all the neighbouring node
+        for(HttpConnection c : this.connections.get(this.getName())){
+            String rwName = this.launchRemoteModule(c, "BBOSlave", new String[]{});
+            String rwName2 = this.launchRemoteModule(c, "BBOSlave", new String[]{});
+
+            //String wName2 = c.launchModule("BBOSlave",null);
+
+
+
+            SparkHTTPServlet.HttpConnection rconn1 = (SparkHTTPServlet.HttpConnection) this.calculateRemoteProcessConnectionDescriptor(rwName, c);
+            SparkHTTPServlet.HttpConnection rconn2 = (SparkHTTPServlet.HttpConnection) this.calculateRemoteProcessConnectionDescriptor(rwName2, c);
+
+            // the coordinator sets up connections to the workers
+            this.addBidirectionalChannel(rconn1, cName);
+            this.addBidirectionalChannel(rconn2, cName);
+
+        }
+        return cName;
+    }
+
+    public void shotDownNetwork(String id){
+        publish("STOP",id);
+
     }
 
 
@@ -232,6 +265,8 @@ public class SparkHTTPServlet extends Com {
                     if(a.type== HttpConnectionType.INPUT)
                         a.type = HttpConnectionType.OUPUT;
                     this.connections.get(to).add(a);
+                    System.out.println("CONNECTION REQUEST - to : "+to+" from: "+as);
+
                 }
                 else if(receivedMsg.startsWith("DISCONNECT")){
                     HttpConnection a = new Gson().fromJson(receivedMsg.split(" ")[1], HttpConnection.class);
@@ -243,8 +278,10 @@ public class SparkHTTPServlet extends Com {
                     String[] sa = receivedMsg.split(" ");
                     String moduleName = sa[1];
                     String args =receivedMsg.substring(receivedMsg.lastIndexOf(moduleName),receivedMsg.length());
-                    //String args[]
-                    this.launchModule(moduleName,args.split(" "));
+                    String name = this.launchModule(moduleName,args.split(" "));
+                    System.out.println("INSTANTIATING  "+moduleName+" @ "+to);
+                    return name;
+
                 }else // actual message to be handled by the running processes
                     this.messages.get(to).add(request.body());
             //}
@@ -487,7 +524,14 @@ public class SparkHTTPServlet extends Com {
 
     @Override
     public String killRemoteModule(Connection c) {
-        return null;
+        String message = "STOP";
+        String name = "";
+        try {
+            name = send(c,message,this.peerId);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return name;
     }
 
     @Override
