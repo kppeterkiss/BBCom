@@ -44,7 +44,7 @@ public class Main {
 
         try {
             int port = 8901;
-            String nodeName = "node_1";
+            String nodeName = "node_2";
             Com c = new SparkHTTPServlet(/*addresses,*/port,nodeName);
             //boolean reacheable = ((SparkHTTPServlet)c).testPort();
             c.start();
