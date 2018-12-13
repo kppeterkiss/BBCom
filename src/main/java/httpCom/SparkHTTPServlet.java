@@ -4,6 +4,7 @@ import bbcom.utils.FileUtils;
 import bbcom.utils.UnZip;
 import bbcom.utils.Zip;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lib.Address;
 import lib.Com;
 import lib.Connection;
@@ -396,13 +397,15 @@ public class SparkHTTPServlet extends Com {
     public NetworkGraph mapNetwork() {
         this.pendingMapRequests = new LinkedList<>();
 
+
         //NetworkGraph ng = new NetworkGraph(new LinkedList<>());
         for(Map.Entry<String, List<HttpConnection>> e :this.connections.entrySet()){
             List<HttpConnection> connections = e.getValue();
             for(HttpConnection connection : connections)
-            if(connection.type.equals(HttpConnectionType.NODE) && !this.pendingRcvdRequests.contains(connection)){
+            if(connection.type.equals(HttpConnectionType.NODE) && !(this.pendingRcvdRequests!= null && !this.pendingRcvdRequests.contains(connection))){
                 try {
                     long start = System.currentTimeMillis();
+                    //Gson gson = new GsonBuilder().excludeFieldsWithModifiers().setPrettyPrinting().create();
                     String addr = new Gson().toJson(this.getProcessConnectionDescriptor(this.getName(),HttpConnectionType.NODE),HttpConnection.class);
                     String response = send(connection,"MAP "+addr, this.getName());
                     NodeDescriptor nd = new Gson().fromJson(response,NodeDescriptor.class);
