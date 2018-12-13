@@ -289,7 +289,7 @@ public class SparkHTTPServlet extends Com {
                             mapNetwork();
                         }
                     }).start();
-                    return "mapping...";
+                    return new Gson().toJson(this.getInfo(),NodeDescriptor.class);
                 }
                 else if (receivedMsg.startsWith("INSTANTIATE")){
                     String[] sa = receivedMsg.split(" ");
