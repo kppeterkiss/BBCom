@@ -65,7 +65,7 @@ public class Main {
                     String wName = c.launchModule("BBOSlave", new String[]{});
 
 
-                    //two rwmote worker
+                    //two remote worker
 
                     System.out.println("REMOTE ADDRESS");
                     userinput = reader.readLine();
@@ -96,14 +96,28 @@ public class Main {
             }// we connect to an existing node
             else if(!connectionUrl.equals("")){
                 SparkHTTPServlet.HttpConnection nodeConnectionToConnect = new Gson().fromJson(connectionUrl, SparkHTTPServlet.HttpConnection.class);
-                c.addBidirectionalChannel(nodeConnectionToConnect, c.getName());
+                if(nodeConnectionToConnect.type.equals(SparkHTTPServlet.HttpConnectionType.NODE))
+                    nodeConnectionToConnect.type = SparkHTTPServlet.HttpConnectionType.NODE;
+                c.connectToNetwork(nodeConnectionToConnect/*, c.getName()*/);
 
 
+            }
+            else if (mode.equals("local")){
+                String cName = c.launchModule("BBoCoordinator", new String[]{"-apath", "modules/coordinator/"});
+                //--instantiate  -> sending request to nodes
+                //one local worker
+                String wName = c.launchModule("BBOSlave", new String[]{});
+
+
+                SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName);
+                conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
+                c.addBidirectionalChannel(conn, cName);
             }
             else if(mode.equals("starter")){
                 String c_name = "";
                 while (!userinput.equals("STOP")) {
                     userinput = reader.readLine();
+                    System.out.println("user input : "+userinput);
                     //at the coordinator node we build up the network
                     if(userinput.toUpperCase().equals("BUILD"))
                         c_name = ((SparkHTTPServlet)c).buildNetwork();

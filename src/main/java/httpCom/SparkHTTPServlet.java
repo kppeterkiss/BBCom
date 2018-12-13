@@ -59,22 +59,24 @@ public class SparkHTTPServlet extends Com {
         String cName = this.launchModule("BBoCoordinator", new String[]{"-apath", "modules/coordinator/"});
         //--instantiate  -> sending request to nodes
         //one local worker
-        String wName = this.launchModule("BBOSlave", new String[]{});
+       // String wName = this.launchModule("BBOSlave", new String[]{});
         // this supposed to return all the neighbouring node
         for(HttpConnection c : this.connections.get(this.getName())){
             String rwName = this.launchRemoteModule(c, "BBOSlave", new String[]{});
-            String rwName2 = this.launchRemoteModule(c, "BBOSlave", new String[]{});
 
-            //String wName2 = c.launchModule("BBOSlave",null);
 
 
 
             SparkHTTPServlet.HttpConnection rconn1 = (SparkHTTPServlet.HttpConnection) this.calculateRemoteProcessConnectionDescriptor(rwName, c);
+            this.addBidirectionalChannel(rconn1, cName);
+
+
+            /*String rwName2 = this.launchRemoteModule(c, "BBOSlave", new String[]{});
+
             SparkHTTPServlet.HttpConnection rconn2 = (SparkHTTPServlet.HttpConnection) this.calculateRemoteProcessConnectionDescriptor(rwName2, c);
 
             // the coordinator sets up connections to the workers
-            this.addBidirectionalChannel(rconn1, cName);
-            this.addBidirectionalChannel(rconn2, cName);
+            this.addBidirectionalChannel(rconn2, cName);*/
 
         }
         return cName;
@@ -91,7 +93,7 @@ public class SparkHTTPServlet extends Com {
         this.connections = connections;
     }
 
-    public void sendFile(String fileName, int port) throws IOException {
+    public synchronized void sendFile(String fileName, int port) throws IOException {
         ServerSocket servsock = new ServerSocket(port);
         File myFile = new File(fileName);
         boolean sent = false;
@@ -107,9 +109,10 @@ public class SparkHTTPServlet extends Com {
             sock.close();
             sent = true;
         }
+
     }
 
-    public int sendEnvironment(String path,String url, int port, String sender) throws IOException {
+    public  int sendEnvironment(String path,String url, int port, String sender) throws IOException {
 
         if(new File(path).isDirectory()) {
             Zip.compress(path, comWorkingDir+"/temp/Folder.zip");
@@ -246,6 +249,7 @@ public class SparkHTTPServlet extends Com {
                 //as = getFile(as,loc,to);
                 as = getFile(as,loc,null); // no further request if not found..
                 System.out.println("requested found = "+as);
+                //here we return
                 return sendEnvironment(as,a.getHostAddress(),a.getPort(),"X");
 
             }
@@ -307,6 +311,8 @@ public class SparkHTTPServlet extends Com {
             return new VelocityTemplateEngine(velocityEngine).render( new ModelAndView(model1, layout));
         });
         s.get("/update_map", (request, response) -> {
+            System.out.println("MAPPING res: "+new Gson().toJson(this.mapNetwork(),NetworkGraph.class));
+            System.out.println("CONNECTIONS: "+new Gson().toJson(this.connections));
            return new Gson().toJson(this.connections);
 
         });
@@ -626,6 +632,34 @@ public class SparkHTTPServlet extends Com {
 
         }
         return responses.get(0);
+        //return false;
+    }
+
+    public List<String> distribute(List<String> msgs, String sender) {
+        int i = 0;
+        List<String> responses = new ArrayList<>();
+        for(String msg : msgs) {
+            if(i == connections.get(sender).size())
+                i = 0;
+            HttpConnection connection = connections.get(sender).get(i++);
+
+                try {
+
+                    if (connection.type == HttpConnectionType.BIDIRECT || connection.type == HttpConnectionType.OUPUT || connection.type == HttpConnectionType.NODE) {
+                        responses.add(send(connection, msg, sender));
+
+                    } else
+                        return null;
+
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+        return responses;
         //return false;
     }
 
