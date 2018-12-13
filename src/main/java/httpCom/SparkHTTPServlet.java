@@ -12,9 +12,7 @@ import network.EdgeDescriptor;
 import network.NetworkGraph;
 import network.NodeDescriptor;
 import org.apache.velocity.app.VelocityEngine;
-import spark.ModelAndView;
-import spark.Service;
-import spark.Spark;
+import spark.*;
 
 import java.io.*;
 
@@ -228,7 +226,7 @@ public class SparkHTTPServlet extends Com {
 
         s.staticFileLocation("public/");
 
-        s.post("/com", (request, response) -> {
+        s.post("/com", (Request request, Response response) -> {
             System.out.println("Incoming: "+request.raw());
             String to = request.queryParams("To");
             String receivedMsg = request.body();
@@ -273,10 +271,25 @@ public class SparkHTTPServlet extends Com {
 
                 }
                 else if(receivedMsg.startsWith("DISCONNECT")){
+
                     HttpConnection a = new Gson().fromJson(receivedMsg.split(" ")[1], HttpConnection.class);
                     this.connections.forEach((key, value) -> value.remove(a));
 
 
+                }
+                else if(receivedMsg.startsWith("MAP")){
+                    String as = receivedMsg.split(" ")[1];
+                    HttpConnection a = new Gson().fromJson(as, HttpConnection.class);
+                    if(this.pendingRcvdRequests == null)
+                        this.pendingRcvdRequests = new LinkedList<>();
+                    this.pendingRcvdRequests.add(a);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mapNetwork();
+                        }
+                    }).start();
+                    return "mapping...";
                 }
                 else if (receivedMsg.startsWith("INSTANTIATE")){
                     String[] sa = receivedMsg.split(" ");
@@ -368,7 +381,9 @@ public class SparkHTTPServlet extends Com {
         return null;
     }
 
+    //requests initiated from the node
     LinkedList<HttpConnection> pendingMapRequests;
+    // requests need to be answered
     LinkedList<HttpConnection> pendingRcvdRequests;
     static int mapIdCounter = 0;
 
@@ -406,7 +421,7 @@ public class SparkHTTPServlet extends Com {
                 ng.addSubGraph(graph);
             }
         }
-        for(HttpConnection c : this.pendingMapRequests) {
+        for(HttpConnection c : this.pendingRcvdRequests) {
             try {
                 send(c,"MAP_RES "+this.getConnections().get(this.getName()) +" "+new Gson().toJson(ng, NetworkGraph.class), "");
             } catch (IOException e) {
