@@ -421,11 +421,13 @@ public class SparkHTTPServlet extends Com {
                 ng.addSubGraph(graph);
             }
         }
-        for(HttpConnection c : this.pendingRcvdRequests) {
-            try {
-                send(c,"MAP_RES "+this.getConnections().get(this.getName()) +" "+new Gson().toJson(ng, NetworkGraph.class), "");
-            } catch (IOException e) {
-                e.printStackTrace();
+        if(this.pendingRcvdRequests != null) {
+            for (HttpConnection c : this.pendingRcvdRequests) {
+                try {
+                    send(c, "MAP_RES " + this.getConnections().get(this.getName()) + " " + new Gson().toJson(ng, NetworkGraph.class), "");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
         this.pendingMapRequests = new LinkedList<>();
