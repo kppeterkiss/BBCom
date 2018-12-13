@@ -36,7 +36,7 @@ public class ClMain {
                 //String rWName = c.launchRemoteModule(,"BBOSlave",null);
 
                 //String wName2 = c.launchModule("BBOSlave",null);
-                SparkHTTPServlet.HttpConnection conn = ( SparkHTTPServlet.HttpConnection)c.getProcessConnectionDescriptor(wName);
+                SparkHTTPServlet.HttpConnection conn = ( SparkHTTPServlet.HttpConnection)c.getProcessConnectionDescriptor(wName, SparkHTTPServlet.HttpConnectionType.BIDIRECT); // type not sure
                 conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
                 c.addBidirectionalChannel(conn,cName);
 

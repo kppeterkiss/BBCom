@@ -454,7 +454,8 @@ public class SparkHTTPServlet extends Com {
 
         this.connections.get(processId).add(connectionDescriptor);
 
-        HttpConnection connectionInfoOfThis = (SparkHTTPServlet.HttpConnection)this.getProcessConnectionDescriptor(processId);
+
+        HttpConnection connectionInfoOfThis = (SparkHTTPServlet.HttpConnection)this.getProcessConnectionDescriptor(processId,type);
 
 
         // add the slave process addreslist to the node connections
@@ -543,16 +544,19 @@ public class SparkHTTPServlet extends Com {
     }
 
     @Override
-    public Connection getProcessConnectionDescriptor(String id) {
+    public Connection getProcessConnectionDescriptor(String id,ConnectionType type) {
+        HttpConnectionType t1 = (HttpConnectionType)type;
         try {
             HttpAddress a = new HttpAddress(this.getPeerId(),id,this.getPublicIP(),this.getDefaultPort());
-            return new HttpConnection(HttpConnectionType.BIDIRECT,a);
+            return new HttpConnection(t1,a);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
 
     }
+
+
 
     // TODO: 2018. 12. 06. this is local!!! not asking the remote node
     @Override
