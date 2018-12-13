@@ -50,7 +50,7 @@ public class Main {
             c.start();
             c.join();
             System.out.println("=======================================");
-            System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName()), SparkHTTPServlet.HttpConnection.class));
+            System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), SparkHTTPServlet.HttpConnectionType.NODE), SparkHTTPServlet.HttpConnection.class));
             System.out.println("=======================================");
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -84,8 +84,9 @@ public class Main {
                     c.addBidirectionalChannel(rconn1, cName);
                     c.addBidirectionalChannel(rconn2, cName);
 
-                    SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName);
-                    conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
+                    SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName, SparkHTTPServlet.HttpConnectionType.BIDIRECT);
+
+                    //conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
                     c.addBidirectionalChannel(conn, cName);
 
                 } catch (NoSuchMethodException e) {
@@ -109,8 +110,8 @@ public class Main {
                 String wName = c.launchModule("BBOSlave", new String[]{});
 
 
-                SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName);
-                conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
+                SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName, SparkHTTPServlet.HttpConnectionType.BIDIRECT);
+                //conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
                 c.addBidirectionalChannel(conn, cName);
             }
             else if(mode.equals("starter")){
