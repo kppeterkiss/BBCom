@@ -415,8 +415,14 @@ public class SparkHTTPServlet extends Com {
         }
         while(!pendingMapRequests.isEmpty()){
             List<String> answers = receive(this.getName(),"MAP_RES");
-            if(answers==null)
+            if(answers==null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 continue;
+            }
             for(String s : answers){
                 String[] sa = s.split(" ");
                 HttpConnection c = new Gson().fromJson(sa[1],HttpConnection.class);
