@@ -374,6 +374,8 @@ public class SparkHTTPServlet extends Com {
 
     @Override
     public NetworkGraph mapNetwork() {
+        this.pendingMapRequests = new LinkedList<>();
+
         NetworkGraph ng = new NetworkGraph(new LinkedList<>());
         for(Map.Entry<String, List<HttpConnection>> e :this.connections.entrySet()){
             List<HttpConnection> connections = e.getValue();
