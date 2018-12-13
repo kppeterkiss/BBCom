@@ -393,7 +393,7 @@ public class SparkHTTPServlet extends Com {
     public NetworkGraph mapNetwork() {
         this.pendingMapRequests = new LinkedList<>();
 
-        NetworkGraph ng = new NetworkGraph(new LinkedList<>());
+        //NetworkGraph ng = new NetworkGraph(new LinkedList<>());
         for(Map.Entry<String, List<HttpConnection>> e :this.connections.entrySet()){
             List<HttpConnection> connections = e.getValue();
             for(HttpConnection connection : connections)
@@ -415,13 +415,14 @@ public class SparkHTTPServlet extends Com {
         }
         while(!pendingMapRequests.isEmpty()){
             List<String> answers = receive(this.getName(),"MAP_RES");
-
+            if(answers==null)
+                continue;
             for(String s : answers){
                 String[] sa = s.split(" ");
                 HttpConnection c = new Gson().fromJson(sa[1],HttpConnection.class);
                 pendingMapRequests.remove(c);
                 NetworkGraph graph = new Gson().fromJson(s,NetworkGraph.class);
-                ng.addSubGraph(graph);
+                this.ng.addSubGraph(graph);
             }
         }
         if(this.pendingRcvdRequests != null) {
