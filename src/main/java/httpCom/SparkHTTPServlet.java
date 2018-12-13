@@ -34,6 +34,8 @@ public class SparkHTTPServlet extends Com {
     final String tempfolder = comWorkingDir+"/temp";
     final String resfolder = comWorkingDir+"/repo";
 
+    NetworkGraph ng = new NetworkGraph(new LinkedList<>());
+
 
 
 
@@ -398,7 +400,8 @@ public class SparkHTTPServlet extends Com {
             if(connection.type.equals(HttpConnectionType.NODE)){
                 try {
                     long start = System.currentTimeMillis();
-                    String response = send(connection,"MAP",this.getName());
+                    String addr = new Gson().toJson(this.getProcessConnectionDescriptor(this.getName(),HttpConnectionType.NODE),HttpConnection.class);
+                    String response = send(connection,"MAP "+addr, this.getName());
                     NodeDescriptor nd = new Gson().fromJson(response,NodeDescriptor.class);
                     this.pendingMapRequests.add(connection);
                     long finish = System.currentTimeMillis();
