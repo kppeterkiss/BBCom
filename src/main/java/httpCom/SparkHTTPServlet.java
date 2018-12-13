@@ -385,6 +385,9 @@ public class SparkHTTPServlet extends Com {
 
     //requests initiated from the node
     LinkedList<HttpConnection> pendingMapRequests;
+
+    //todo might be useful who waits for the answers
+    Map<HttpConnection,HttpConnection> mappingRequests;
     // requests need to be answered
     LinkedList<HttpConnection> pendingRcvdRequests;
     static int mapIdCounter = 0;
@@ -397,7 +400,7 @@ public class SparkHTTPServlet extends Com {
         for(Map.Entry<String, List<HttpConnection>> e :this.connections.entrySet()){
             List<HttpConnection> connections = e.getValue();
             for(HttpConnection connection : connections)
-            if(connection.type.equals(HttpConnectionType.NODE)){
+            if(connection.type.equals(HttpConnectionType.NODE) && !this.pendingRcvdRequests.contains(connection)){
                 try {
                     long start = System.currentTimeMillis();
                     String addr = new Gson().toJson(this.getProcessConnectionDescriptor(this.getName(),HttpConnectionType.NODE),HttpConnection.class);
