@@ -148,7 +148,7 @@ public class SparkHTTPServlet extends Com {
         try {
             //String s = System.getProperty("user.dir");
             //String defaultpath = new URI(this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath()).resolve(resfolder).toString();
-            String key = filename + location==null?"":location;
+            String key = filename + (location==null?"":location);
             if(pullqueue.containsKey(key)) {
                 if (pullqueue.get(key) instanceof String)
                     return (String) pullqueue.get(key);
