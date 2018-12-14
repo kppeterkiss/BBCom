@@ -21,6 +21,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.*;
 import java.util.*;
+import java.util.stream.Collectors;
+
 import spark.template.velocity.VelocityTemplateEngine;
 
 
@@ -171,8 +173,9 @@ public class SparkHTTPServlet extends Com {
                     }));
                     ((Thread)pullqueue.get(key)).start();
                     ((Thread)pullqueue.get(key)).join();
-                    pullqueue.put(key,path[0]);
+
                 }
+                pullqueue.put(key,path[0]);
             }
             System.out.println("Found FILE: "+pullqueue.get(key));
             return  (String) pullqueue.get(key);
@@ -344,8 +347,15 @@ public class SparkHTTPServlet extends Com {
                 System.out.println("INSTANTIATING  "+moduleName+" @ "+to);
                 return name;
 
-            }else // actual message to be handled by the running processes
-                this.messages.get(to).add(request.body());
+            }else if (receivedMsg.startsWith("ARRAY")){
+                //String[] sa = receivedMsg.split(" ");
+                String msgs = receivedMsg.substring(receivedMsg.indexOf(" ")+1,receivedMsg.length());
+                //System.out.println("received array: "+msgs);
+                this.messages.get(to).addAll(Arrays.asList(msgs.split(";")));
+
+            }
+            else // actual message to be handled by the running processes
+                this.messages.get(to).add(receivedMsg);
             //}
             /*Map<String, Object> model1 = new HashMap<>();
 
@@ -514,7 +524,7 @@ public class SparkHTTPServlet extends Com {
 
     //processname should be here..
     // TODO: 2018. 12. 04. type is redundant
-    public boolean connect(HttpConnection connectionDescriptor, String processId,HttpConnectionType type) {
+    public boolean connect(HttpConnection connectionDescriptor, String processId,HttpConnectionType type)  {
 
         // httpAddress of node to be connected
         //HttpConnection c  = new Gson().fromJson(coordinatorDescriptor,HttpConnection.class);
@@ -544,7 +554,12 @@ public class SparkHTTPServlet extends Com {
         //getPublicIP();
         //this.publish("CONNECT "+ new Gson().toJson(new HttpAddress(this.id,processId,getPublicIP(), port),HttpAddress.class), processId);
         // this.publish("CONNECT "+ new Gson().toJson(new HttpConnection(HttpConnectionType.BIDIRECT,new HttpAddress(this.peerId,processId,"localhost", this.defaultPort)),HttpConnection.class), processId);
-        this.publish("CONNECT "+ new Gson().toJson(connectionInfoOfThis,HttpConnection.class), processId);
+        try {
+            this.send(connectionDescriptor,"CONNECT "+ new Gson().toJson(connectionInfoOfThis,HttpConnection.class), processId);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
 
         //     } catch (UnknownHostException e) {
         //        e.printStackTrace();
@@ -697,11 +712,8 @@ public class SparkHTTPServlet extends Com {
         List<String> responses = new ArrayList<>();
         for(HttpConnection connection: connections.get(sender)){//make a http post with the msg
             try {
-                // TODO: 2018. 12. 03. parallel 
-                //id = ids.get(i++);
                 if(connection.type == HttpConnectionType.BIDIRECT || connection.type == HttpConnectionType.OUPUT || connection.type == HttpConnectionType.NODE) {
                     responses.add(send( connection, msg,sender));
-
                 }
                 else
                     return null;
@@ -720,29 +732,31 @@ public class SparkHTTPServlet extends Com {
     public List<String> distribute(List<String> msgs, String sender) {
         int i = 0;
         List<String> responses = new ArrayList<>();
-        for(String msg : msgs) {
-            if(i == connections.get(sender).size())
-                i = 0;
-            HttpConnection connection = connections.get(sender).get(i++);
-
+        List<HttpConnection> interestedConns = connections.get(sender)
+                .stream()
+                .filter(connection->connection.type == HttpConnectionType.BIDIRECT || connection.type == HttpConnectionType.OUPUT || connection.type == HttpConnectionType.NODE)
+                .collect(Collectors.toList());
+        int pernode = (int)((float)msgs.size() / interestedConns.size()+0.5f);
+        for(HttpConnection c : interestedConns){
+            StringJoiner sb= new StringJoiner(";");
+            for(int j = 0;j<pernode && i<msgs.size();++j){
+                sb.add(msgs.get(i++));
+            }
+            //String a = sb.toString()
+            //
+            //
+            String msg = "ARRAY "+sb.toString();
+            System.out.println("----------------------");
+            System.out.println(msg);
+            System.out.println("----------------------");
             try {
-
-                if (connection.type == HttpConnectionType.BIDIRECT || connection.type == HttpConnectionType.OUPUT || connection.type == HttpConnectionType.NODE) {
-                    responses.add(send(connection, msg, sender));
-
-                } else
-                    return null;
-
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
+                responses.add(send(c, msg, sender));
             } catch (IOException e) {
+                // TODO: 2018. 12. 14. maybe try to send elswhere
                 e.printStackTrace();
             }
-
         }
-
         return responses;
-        //return false;
     }
 
 
@@ -791,6 +805,8 @@ public class SparkHTTPServlet extends Com {
                     ret.add(msg);
                     messages.get(id).remove(msg);
                 }
+                else
+                    System.out.println("Discarded message");
         }
 
         return messages.get(id);

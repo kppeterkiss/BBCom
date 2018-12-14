@@ -127,15 +127,19 @@ public class Main {
                 System.out.println("=======================================");
                 System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), SparkHTTPServlet.HttpConnectionType.NODE), SparkHTTPServlet.HttpConnection.class));
                 System.out.println("=======================================");
+
                 String cName = c.launchModule("BBoCoordinator", new String[]{"-apath", "modules/coordinator/"});
                 //--instantiate  -> sending request to nodes
                 //one local worker
                 String wName = c.launchModule("BBOSlave", new String[]{});
+                String wName1 = c.launchModule("BBOSlave", new String[]{});
 
 
                 SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName, SparkHTTPServlet.HttpConnectionType.BIDIRECT);
+                SparkHTTPServlet.HttpConnection conn1 = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName1, SparkHTTPServlet.HttpConnectionType.BIDIRECT);
                 //conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
                 c.addBidirectionalChannel(conn, cName);
+                c.addBidirectionalChannel(conn1, cName);
             }
             else if(mode.equals("starter")){
                 String nodeName = "node_1";
