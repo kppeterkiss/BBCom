@@ -176,7 +176,7 @@ public class SparkHTTPServlet extends Com {
                         }
                     });
                     t.start();
-                    //((Thread)pullqueue.get(key)).join();
+                    ((Thread)pullqueue.get(key)).join();
 
                 }
             }
