@@ -144,20 +144,26 @@ public class SparkHTTPServlet extends Com {
     }
 
     final Map<String,Object> pullqueue = new HashMap<>();
+    //static int enter =0;
 
     // here
     @Override
     public  String getFile(String filename, String location, String fileDestinationNode) {
         try {
+           // int i = enter++;
+           // System.out.println("enter"+i);
             //String s = System.getProperty("user.dir");
             //String defaultpath = new URI(this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath()).resolve(resfolder).toString();
             String key = filename + (location==null?"":location);
             if(pullqueue.containsKey(key)) {
-                if (pullqueue.get(key) instanceof String)
+                if (pullqueue.get(key) instanceof String) {
+                   // System.out.println("SHOULD BE A STRING");
+                   // System.out.println("RETURN "+i);
                     return (String) pullqueue.get(key);
+                }
                 else ((Thread)pullqueue.get(key)).join();
             }else{
-
+                //System.out.println("NO TRY YET");
                 String[] path = new String[]{ FileUtils.findRersource(location==null?resfolder:location,filename)};
                 System.out.println("PATH found = " +path[0]);
 
@@ -166,21 +172,29 @@ public class SparkHTTPServlet extends Com {
                         @Override
                         public void run() {
                             try {
-                                pullqueue.put(key, this);
                                 path[0] = pullFile(filename,fileDestinationNode);
                                 pullqueue.put(key,path[0]);
+                                System.out.println("thread replaced");
 
                             } catch (Exception e) {
+                                System.out.println("HEREERERERERERERER");
                                 e.printStackTrace();
                             }
                         }
                     });
+                    pullqueue.put(key, t);
                     t.start();
+                    System.out.println("strated leeft");
+
                     ((Thread)pullqueue.get(key)).join();
+                    System.out.println("join leeft");
 
                 }
+                else
+                    pullqueue.put(key,path[0]);
             }
             System.out.println("Found FILE: "+pullqueue.get(key));
+           // System.out.println("RETURN "+i);
             return  (String) pullqueue.get(key);
         } catch (Exception e) {
             e.printStackTrace();
