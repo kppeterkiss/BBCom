@@ -184,8 +184,8 @@ public class SparkHTTPServlet extends Com {
             
 
         }
-        //here we have in path the original plavce but if it is sent over from different node it is only the very inner folder
-        filename = filename.substring(filename.lastIndexOf("/"),filename.length());
+        //here we have in path the original place but if it is sent over from different node it is only the very inner folder
+        filename = filename.contains("/")? filename.substring(filename.lastIndexOf("/"),filename.length()):filename;
 
         return "repo/"+filename;
     }
