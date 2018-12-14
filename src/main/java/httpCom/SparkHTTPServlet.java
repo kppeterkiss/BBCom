@@ -145,8 +145,9 @@ public class SparkHTTPServlet extends Com {
 
     final Map<String,Object> pullqueue = new HashMap<>();
 
+    // here
     @Override
-    public String getFile(String filename, String location, String fileDestinationNode) {
+    public  String getFile(String filename, String location, String fileDestinationNode) {
         try {
             //String s = System.getProperty("user.dir");
             //String defaultpath = new URI(this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath()).resolve(resfolder).toString();
@@ -165,6 +166,7 @@ public class SparkHTTPServlet extends Com {
                         @Override
                         public void run() {
                             try {
+                                pullqueue.put(key, this);
                                 path[0] = pullFile(filename,fileDestinationNode);
                                 pullqueue.put(key,path[0]);
 
@@ -174,7 +176,6 @@ public class SparkHTTPServlet extends Com {
                         }
                     });
                     t.start();
-                    pullqueue.put(key, t);
                     //((Thread)pullqueue.get(key)).join();
 
                 }
