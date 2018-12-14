@@ -42,7 +42,7 @@ public class SparkHTTPServlet extends Com {
 
 
     //public void setId(String id) {
-   //    this.id = id;
+    //    this.id = id;
     //}
 
     //String id = "node_2";
@@ -63,8 +63,9 @@ public class SparkHTTPServlet extends Com {
         String cName = this.launchModule("BBoCoordinator", new String[]{"-apath", "modules/coordinator/"});
         //--instantiate  -> sending request to nodes
         //one local worker
-       // String wName = this.launchModule("BBOSlave", new String[]{});
+        // String wName = this.launchModule("BBOSlave", new String[]{});
         // this supposed to return all the neighbouring node
+        System.out.println(getName());
         for(HttpConnection c : this.connections.get(this.getName())){
             String rwName = this.launchRemoteModule(c, "BBOSlave", new String[]{});
 
@@ -116,15 +117,15 @@ public class SparkHTTPServlet extends Com {
 
     }
 
-    public  int sendEnvironment(String path,String url, int port, String sender) throws IOException {
-
+    public  String  sendEnvironment(String path,String url, int port, String sender) throws IOException {
+// TODO: 2018. 12. 14. multiple secondary port for parallel transmission
         if(new File(path).isDirectory()) {
             Zip.compress(path, comWorkingDir+"/temp/Folder.zip");
             path = "temp/Folder.zip";
         }
         final String resourcepath = path  ;
-       // for(HttpAddress httpAddress :connections.get(sender))
-       // {
+        // for(HttpAddress httpAddress :connections.get(sender))
+        // {
         new Thread(()-> {
             try {
                 sendFile(resourcepath, this.defaultSecondaryPort);
@@ -132,26 +133,48 @@ public class SparkHTTPServlet extends Com {
                 e.printStackTrace();
             }
         }).start();
-        return (int) new File(path).length();
-       // }
+        HttpConnection c =  (HttpConnection) this.getProcessConnectionDescriptor(this.getName(),HttpConnectionType.NODE);
+        c.httpAddress.port = this.defaultSecondaryPort;
+        return new File(path).length() +" "+new Gson().toJson(c,HttpConnection.class);
+        // }
 
 
     }
 
-
+    Map<String,Object> pullqueue = new HashMap<>();
 
     @Override
     public String getFile(String filename, String location, String fileDestinationNode) {
         try {
             //String s = System.getProperty("user.dir");
             //String defaultpath = new URI(this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath()).resolve(resfolder).toString();
-        String path = FileUtils.findRersource(location==null?resfolder:location,filename);
-            System.out.println("PATH found = " +path);
-        if (path == null && fileDestinationNode!=null) {
-                path = pullFile(filename,fileDestinationNode);
-        }
-        System.out.println("Found FILE: "+path);
-            return path;
+            String key = filename + location==null?"":location;
+            if(pullqueue.containsKey(key)) {
+                if (pullqueue.get(key) instanceof String)
+                    return (String) pullqueue.get(key);
+                else ((Thread)pullqueue.get(key)).join();
+            }else{
+
+                String[] path = new String[]{ FileUtils.findRersource(location==null?resfolder:location,filename)};
+                System.out.println("PATH found = " +path[0]);
+
+                if (path[0] == null && fileDestinationNode!=null) {
+                    pullqueue.put(key, new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                path[0] = pullFile(filename,fileDestinationNode);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }));
+                    ((Thread)pullqueue.get(key)).join();
+                    pullqueue.put(key,path[0]);
+                }
+            }
+            System.out.println("Found FILE: "+pullqueue.get(key));
+            return  (String) pullqueue.get(key);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -175,13 +198,15 @@ public class SparkHTTPServlet extends Com {
             //if(httpAddress.processId.equals())
             this.inetAddress = "http://"+getPublicIP()+":"+this.defaultPort+"/com";
             //getPublicIP();
-            int size = Integer.parseInt(this.publish("PULL_FILE "+ new Gson().toJson(new HttpAddress(this.peerId,sender,getPublicIP(), this.defaultSecondaryPort),HttpAddress.class)+" "+filename, sender));
+            String[] ans = this.publish("PULL_FILE "+ new Gson().toJson(new HttpAddress(this.peerId,sender,getPublicIP(), this.defaultSecondaryPort),HttpAddress.class)+" "+filename, sender).split(" ");
+            int size = Integer.parseInt(ans[0]);
+            HttpConnection c = new Gson().fromJson(ans[1],HttpConnection.class);
             Thread.sleep(1000);
-            receiveFile(connection.httpAddress.getUrl(),this.defaultSecondaryPort,"temp/dl.zip", size);
+            receiveFile(connection.httpAddress.getUrl(),this.defaultSecondaryPort,"temp/dl.zip", size,c);
             UnZip uz = new UnZip();
             //todo
             uz.unZipIt("temp/dl.zip","repo");
-            
+
 
         }
         //here we have in path the original plavce but if it is sent over from different node it is only the very inner folder
@@ -190,7 +215,9 @@ public class SparkHTTPServlet extends Com {
         return "repo/"+filename;
     }
 
-    private void receiveFile(String host, int port, String fileName, int size) throws IOException {
+    private void receiveFile(String host, int port, String fileName, int size, HttpConnection c) throws IOException {
+        host = c.httpAddress.url;
+        port = c.httpAddress.port;
         System.out.println("DOWNLOADING FILE");
         Socket sock = new Socket(host, port);
         byte[] mybytearray = new byte[size];
@@ -207,7 +234,7 @@ public class SparkHTTPServlet extends Com {
     Map<String,List<HttpConnection>> connections = new HashMap<>();
 
 
-   // List<String> connections;
+    // List<String> connections;
     List<String> ids;
     Map<String,List<String>> messages = new HashMap<>();
 
@@ -269,55 +296,55 @@ public class SparkHTTPServlet extends Com {
 
             }
             // add the key(id) of addressee to the common message map
-                if (!messages.containsKey(to))
-                    this.messages.put(to, new LinkedList<>());
+            if (!messages.containsKey(to))
+                this.messages.put(to, new LinkedList<>());
             // this should not happen
-                if (!connections.containsKey(to))
-                    this.connections.put(to, new LinkedList<>());
-                // these to be handled by the peer, no need to add to the messages
-                if (receivedMsg.startsWith("CONNECT"))
-                {
-                    String as = receivedMsg.split(" ")[1];
-                    HttpConnection a = new Gson().fromJson(as, HttpConnection.class);
-                    if(a.type== HttpConnectionType.OUPUT)
-                        a.type = HttpConnectionType.INPUT;
-                    if(a.type== HttpConnectionType.INPUT)
-                        a.type = HttpConnectionType.OUPUT;
-                    this.connections.get(to).add(a);
-                    System.out.println("CONNECTION REQUEST - to : "+to+" from: "+as);
+            if (!connections.containsKey(to))
+                this.connections.put(to, new LinkedList<>());
+            // these to be handled by the peer, no need to add to the messages
+            if (receivedMsg.startsWith("CONNECT"))
+            {
+                String as = receivedMsg.split(" ")[1];
+                HttpConnection a = new Gson().fromJson(as, HttpConnection.class);
+                if(a.type== HttpConnectionType.OUPUT)
+                    a.type = HttpConnectionType.INPUT;
+                if(a.type== HttpConnectionType.INPUT)
+                    a.type = HttpConnectionType.OUPUT;
+                this.connections.get(to).add(a);
+                System.out.println("CONNECTION REQUEST - to : "+to+" from: "+as);
 
-                }
-                else if(receivedMsg.startsWith("DISCONNECT")){
+            }
+            else if(receivedMsg.startsWith("DISCONNECT")){
 
-                    HttpConnection a = new Gson().fromJson(receivedMsg.split(" ")[1], HttpConnection.class);
-                    this.connections.forEach((key, value) -> value.remove(a));
+                HttpConnection a = new Gson().fromJson(receivedMsg.split(" ")[1], HttpConnection.class);
+                this.connections.forEach((key, value) -> value.remove(a));
 
 
-                }
-                else if(receivedMsg.startsWith("MAP")){
-                    String as = receivedMsg.split(" ")[1];
-                    HttpConnection a = new Gson().fromJson(as, HttpConnection.class);
-                    if(this.pendingRcvdRequests == null)
-                        this.pendingRcvdRequests = new LinkedList<>();
-                    this.pendingRcvdRequests.add(a);
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mapNetwork();
-                        }
-                    }).start();
-                    return new Gson().toJson(this.getInfo(), PeerDescriptor.class);
-                }
-                else if (receivedMsg.startsWith("INSTANTIATE")){
-                    String[] sa = receivedMsg.split(" ");
-                    String moduleName = sa[1];
-                    String args =receivedMsg.substring(receivedMsg.lastIndexOf(moduleName),receivedMsg.length());
-                    String name = this.launchModule(moduleName,args.split(" "));
-                    System.out.println("INSTANTIATING  "+moduleName+" @ "+to);
-                    return name;
+            }
+            else if(receivedMsg.startsWith("MAP")){
+                String as = receivedMsg.split(" ")[1];
+                HttpConnection a = new Gson().fromJson(as, HttpConnection.class);
+                if(this.pendingRcvdRequests == null)
+                    this.pendingRcvdRequests = new LinkedList<>();
+                this.pendingRcvdRequests.add(a);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mapNetwork();
+                    }
+                }).start();
+                return new Gson().toJson(this.getInfo(), PeerDescriptor.class);
+            }
+            else if (receivedMsg.startsWith("INSTANTIATE")){
+                String[] sa = receivedMsg.split(" ");
+                String moduleName = sa[1];
+                String args =receivedMsg.substring(receivedMsg.lastIndexOf(moduleName),receivedMsg.length());
+                String name = this.launchModule(moduleName,args.split(" "));
+                System.out.println("INSTANTIATING  "+moduleName+" @ "+to);
+                return name;
 
-                }else // actual message to be handled by the running processes
-                    this.messages.get(to).add(request.body());
+            }else // actual message to be handled by the running processes
+                this.messages.get(to).add(request.body());
             //}
             /*Map<String, Object> model1 = new HashMap<>();
 
@@ -327,7 +354,7 @@ public class SparkHTTPServlet extends Com {
             model1.put("template","templates/algorithm.vtl");
             model1.put("algParamMap",algParamMap);
             model1.put("parametertypes",classList);*/
-           // System.out.println("TO "+to+" - MSG received -> "+receivedMsg);
+            // System.out.println("TO "+to+" - MSG received -> "+receivedMsg);
             return to;
         });
         s.get("/map", (request, response) -> {
@@ -344,7 +371,7 @@ public class SparkHTTPServlet extends Com {
 
             System.out.println("MAPPING res: "+new Gson().toJson(this.mapNetwork(),NetworkGraph.class));
             System.out.println("CONNECTIONS: "+new Gson().toJson(this.connections));
-           return new Gson().toJson(this.connections);
+            return new Gson().toJson(this.connections);
 
         });
         s.awaitInitialization();
@@ -417,22 +444,22 @@ public class SparkHTTPServlet extends Com {
         for(Map.Entry<String, List<HttpConnection>> e :this.connections.entrySet()){
             List<HttpConnection> connections = e.getValue();
             for(HttpConnection connection : connections)
-            if(connection.type.equals(HttpConnectionType.NODE) && !(this.pendingRcvdRequests!= null && !this.pendingRcvdRequests.contains(connection))){
-                try {
-                    long start = System.currentTimeMillis();
-                    //Gson gson = new GsonBuilder().excludeFieldsWithModifiers().setPrettyPrinting().create();
-                    String addr = new Gson().toJson(this.getProcessConnectionDescriptor(this.getName(),HttpConnectionType.NODE),HttpConnection.class);
-                    String response = send(connection,"MAP "+addr, this.getName());
-                    PeerDescriptor nd = new Gson().fromJson(response,PeerDescriptor.class);
-                    this.pendingMapRequests.add(connection);
-                    long finish = System.currentTimeMillis();
-                    long timeElapsed = finish - start;
-                    EdgeDescriptor ed = new EdgeDescriptor(0L,(long)(timeElapsed/2),new PeerDescriptor[]{nd,this.getInfo()});
-                    ng.addEdge(ed);
-                } catch (IOException e1) {
-                    e1.printStackTrace();
+                if(connection.type.equals(HttpConnectionType.NODE) && !(this.pendingRcvdRequests!= null && !this.pendingRcvdRequests.contains(connection))){
+                    try {
+                        long start = System.currentTimeMillis();
+                        //Gson gson = new GsonBuilder().excludeFieldsWithModifiers().setPrettyPrinting().create();
+                        String addr = new Gson().toJson(this.getProcessConnectionDescriptor(this.getName(),HttpConnectionType.NODE),HttpConnection.class);
+                        String response = send(connection,"MAP "+addr, this.getName());
+                        PeerDescriptor nd = new Gson().fromJson(response,PeerDescriptor.class);
+                        this.pendingMapRequests.add(connection);
+                        long finish = System.currentTimeMillis();
+                        long timeElapsed = finish - start;
+                        EdgeDescriptor ed = new EdgeDescriptor(0L,(long)(timeElapsed/2),new PeerDescriptor[]{nd,this.getInfo()});
+                        ng.addEdge(ed);
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                 }
-            }
         }
         while(!pendingMapRequests.isEmpty()){
             List<String> answers = receive(this.getName(),"MAP_RES");
@@ -495,9 +522,9 @@ public class SparkHTTPServlet extends Com {
             return true;
         if(!this.connections.containsKey(processId))
             this.connections.put(processId,new LinkedList<>());
-       // List<HttpConnection> connections = this.connections.get(processId);
-       // if(connections == null)
-       //     connections =  new LinkedList<>();
+        // List<HttpConnection> connections = this.connections.get(processId);
+        // if(connections == null)
+        //     connections =  new LinkedList<>();
 
 
         this.connections.get(processId).add(connectionDescriptor);
@@ -507,26 +534,26 @@ public class SparkHTTPServlet extends Com {
 
 
         // add the slave process addreslist to the node connections
-       //= this.connections.put(processId,connections);
+        //= this.connections.put(processId,connections);
 
-  //      try (final DatagramSocket socket = new DatagramSocket()) {
-           // socket.connect(InetAddress.getByName("8.8.8.8"), this.defaultPort);
- //           this.inetAddress = "http://"+socket.getLocalAddress().getHostAddress()+":"+port+"/com";
-          //  this.inetAddress = "http://"+getPublicIP()+":"+this.defaultPort+"/com";
-            //getPublicIP();
-            //this.publish("CONNECT "+ new Gson().toJson(new HttpAddress(this.id,processId,getPublicIP(), port),HttpAddress.class), processId);
-           // this.publish("CONNECT "+ new Gson().toJson(new HttpConnection(HttpConnectionType.BIDIRECT,new HttpAddress(this.peerId,processId,"localhost", this.defaultPort)),HttpConnection.class), processId);
-            this.publish("CONNECT "+ new Gson().toJson(connectionInfoOfThis,HttpConnection.class), processId);
+        //      try (final DatagramSocket socket = new DatagramSocket()) {
+        // socket.connect(InetAddress.getByName("8.8.8.8"), this.defaultPort);
+        //           this.inetAddress = "http://"+socket.getLocalAddress().getHostAddress()+":"+port+"/com";
+        //  this.inetAddress = "http://"+getPublicIP()+":"+this.defaultPort+"/com";
+        //getPublicIP();
+        //this.publish("CONNECT "+ new Gson().toJson(new HttpAddress(this.id,processId,getPublicIP(), port),HttpAddress.class), processId);
+        // this.publish("CONNECT "+ new Gson().toJson(new HttpConnection(HttpConnectionType.BIDIRECT,new HttpAddress(this.peerId,processId,"localhost", this.defaultPort)),HttpConnection.class), processId);
+        this.publish("CONNECT "+ new Gson().toJson(connectionInfoOfThis,HttpConnection.class), processId);
 
         //     } catch (UnknownHostException e) {
-    //        e.printStackTrace();
-    //        return false;
-    //    } catch (SocketException e) {
-    //        e.printStackTrace();
-    //        return false;
-    //    } catch (Exception e) {
-    //        e.printStackTrace();
-    //    }
+        //        e.printStackTrace();
+        //        return false;
+        //    } catch (SocketException e) {
+        //        e.printStackTrace();
+        //        return false;
+        //    } catch (Exception e) {
+        //        e.printStackTrace();
+        //    }
         return true;
 
     }
@@ -535,7 +562,7 @@ public class SparkHTTPServlet extends Com {
         String resultMapString =this.publish("MAP",sender);
     }
 
-   // public
+    // public
 
     public SparkHTTPServlet(/*Map<String,List<HttpConnection>> connections,*/ int port_no, String nodeName) throws IOException, ClassNotFoundException {
         super(nodeName);
@@ -631,7 +658,7 @@ public class SparkHTTPServlet extends Com {
         //HttpConnection c = new Gson().fromJson(descriptor,HttpConnection.class);
         // name is the name of the process that we want to connect with connToBuild
         String message =  "CONNECT "+name+" "+connToBuild;
-    String response = "";
+        String response = "";
         try {
             response = send((HttpConnection)descriptor,message,this.peerId);
         } catch (IOException e) {
@@ -697,27 +724,27 @@ public class SparkHTTPServlet extends Com {
                 i = 0;
             HttpConnection connection = connections.get(sender).get(i++);
 
-                try {
+            try {
 
-                    if (connection.type == HttpConnectionType.BIDIRECT || connection.type == HttpConnectionType.OUPUT || connection.type == HttpConnectionType.NODE) {
-                        responses.add(send(connection, msg, sender));
+                if (connection.type == HttpConnectionType.BIDIRECT || connection.type == HttpConnectionType.OUPUT || connection.type == HttpConnectionType.NODE) {
+                    responses.add(send(connection, msg, sender));
 
-                    } else
-                        return null;
+                } else
+                    return null;
 
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+
+        }
 
         return responses;
         //return false;
     }
 
-    
+
     @Override
     public String send(Connection connection, String msg, String sender) throws IOException {
         HttpConnection connection1 = (HttpConnection)connection;
@@ -814,50 +841,50 @@ public class SparkHTTPServlet extends Com {
 
     }
 
-   /* public static class connrctionRequest{
-        String id, url,
+    /* public static class connrctionRequest{
+         String id, url,
 
-    }*/
-   public enum HttpConnectionType implements ConnectionType {
-       INPUT,OUPUT,NODE,BIDIRECT;
-   }
+     }*/
+    public enum HttpConnectionType implements ConnectionType {
+        INPUT,OUPUT,NODE,BIDIRECT;
+    }
 
-   public enum EdgeType {
-       PARALLEL, PARTITIOM;
-   }
+    public enum EdgeType {
+        PARALLEL, PARTITIOM;
+    }
 
-   public static class HttpConnection implements Connection {
+    public static class HttpConnection implements Connection {
         public EdgeType eType;
         public HttpConnectionType type;
         public HttpAddress httpAddress;
 
-       public HttpConnection(HttpConnectionType type,/* EdgeType eType,*/ HttpAddress httpAddress) {
-           this.eType = eType;
-           this.type = type;
-           this.httpAddress = httpAddress;
-       }
+        public HttpConnection(HttpConnectionType type,/* EdgeType eType,*/ HttpAddress httpAddress) {
+            this.eType = eType;
+            this.type = type;
+            this.httpAddress = httpAddress;
+        }
 
-       @Override
-       public boolean equals(Object o) {
-           if (this == o) return true;
-           if (o == null || getClass() != o.getClass()) return false;
-           HttpConnection that = (HttpConnection) o;
-           return Objects.equals(httpAddress, that.httpAddress);
-       }
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            HttpConnection that = (HttpConnection) o;
+            return Objects.equals(httpAddress, that.httpAddress);
+        }
 
-       @Override
-       public int hashCode() {
+        @Override
+        public int hashCode() {
 
-           return Objects.hash(httpAddress);
-       }
+            return Objects.hash(httpAddress);
+        }
 
-       @Override
-       public String toString() {
-           return "HttpConnection{" +
-                   "eType=" + eType +
-                   ", type=" + type +
-                   ", httpAddress=" + httpAddress +
-                   '}';
-       }
-   }
+        @Override
+        public String toString() {
+            return "HttpConnection{" +
+                    "eType=" + eType +
+                    ", type=" + type +
+                    ", httpAddress=" + httpAddress +
+                    '}';
+        }
+    }
 }
