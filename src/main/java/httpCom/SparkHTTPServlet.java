@@ -78,12 +78,12 @@ public class SparkHTTPServlet extends Com {
             this.addBidirectionalChannel(rconn1, cName);
 
 
-            /*String rwName2 = this.launchRemoteModule(c, "BBOSlave", new String[]{});
+            String rwName2 = this.launchRemoteModule(c, "BBOSlave", new String[]{});
 
             SparkHTTPServlet.HttpConnection rconn2 = (SparkHTTPServlet.HttpConnection) this.calculateRemoteProcessConnectionDescriptor(rwName2, c);
 
             // the coordinator sets up connections to the workers
-            this.addBidirectionalChannel(rconn2, cName);*/
+            this.addBidirectionalChannel(rconn2, cName);
 
         }
         return cName;
@@ -161,7 +161,7 @@ public class SparkHTTPServlet extends Com {
                 System.out.println("PATH found = " +path[0]);
 
                 if (path[0] == null && fileDestinationNode!=null) {
-                    pullqueue.put(key, new Thread(new Runnable() {
+                    Thread t = new Thread(new Runnable() {
                         @Override
                         public void run() {
                             try {
@@ -170,8 +170,9 @@ public class SparkHTTPServlet extends Com {
                                 e.printStackTrace();
                             }
                         }
-                    }));
-                    ((Thread)pullqueue.get(key)).start();
+                    });
+                    t.start();
+                    pullqueue.put(key, t);
                     ((Thread)pullqueue.get(key)).join();
 
                 }
