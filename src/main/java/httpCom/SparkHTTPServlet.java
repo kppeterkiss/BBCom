@@ -11,13 +11,14 @@ import lib.Connection;
 import lib.ConnectionType;
 import network.EdgeDescriptor;
 import network.NetworkGraph;
-import network.NodeDescriptor;
+import network.PeerDescriptor;
 import org.apache.velocity.app.VelocityEngine;
 import spark.*;
 
 import java.io.*;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.net.*;
 import java.util.*;
 import spark.template.velocity.VelocityTemplateEngine;
@@ -49,9 +50,11 @@ public class SparkHTTPServlet extends Com {
     //todo let it bhe set from outside
     //public int socketPort = 8902;
     String inetAddress;
-
-    public  Map<String,List<HttpConnection>> getConnections() {
-        return connections;
+    @Override
+    public  Map<String,List<Connection>> getConnections() {
+        Map<String,List<Connection>> res = new HashMap<>();
+        this.connections.forEach((k,v)->{res.put(k,new LinkedList<>()); v.forEach(c->res.get(k).add(c));});
+        return res;
     }
 
     // TODO: 2018. 12. 09.  incorportate  map and other things
@@ -210,6 +213,17 @@ public class SparkHTTPServlet extends Com {
 
     @Override
     public void run(){
+       /* GsonBuilder builder = new GsonBuilder();
+        builder.excludeFieldsWithModifiers(Modifier.TRANSIENT);
+        Gson gson = builder.create();
+        NodeDescriptor nd =  this.getInfo();
+        EdgeDescriptor ed = new EdgeDescriptor(0,0,new NodeDescriptor[]{nd,null});
+        List<EdgeDescriptor> l = new LinkedList<>();
+        l.add(ed);
+        NetworkGraph ng  = new NetworkGraph(l);
+        System.out.println("MAPPING res: "+new  Gson().toJson(ng,NetworkGraph.class));*/
+
+
         System.out.println("Com Port: "+this.defaultPort);
         Spark.exception(Exception.class, (e, request, response) -> {
             final StringWriter sw = new StringWriter();
@@ -292,7 +306,7 @@ public class SparkHTTPServlet extends Com {
                             mapNetwork();
                         }
                     }).start();
-                    return new Gson().toJson(this.getInfo(),NodeDescriptor.class);
+                    return new Gson().toJson(this.getInfo(), PeerDescriptor.class);
                 }
                 else if (receivedMsg.startsWith("INSTANTIATE")){
                     String[] sa = receivedMsg.split(" ");
@@ -327,6 +341,7 @@ public class SparkHTTPServlet extends Com {
             return new VelocityTemplateEngine(velocityEngine).render( new ModelAndView(model1, layout));
         });
         s.get("/update_map", (request, response) -> {
+
             System.out.println("MAPPING res: "+new Gson().toJson(this.mapNetwork(),NetworkGraph.class));
             System.out.println("CONNECTIONS: "+new Gson().toJson(this.connections));
            return new Gson().toJson(this.connections);
@@ -408,11 +423,11 @@ public class SparkHTTPServlet extends Com {
                     //Gson gson = new GsonBuilder().excludeFieldsWithModifiers().setPrettyPrinting().create();
                     String addr = new Gson().toJson(this.getProcessConnectionDescriptor(this.getName(),HttpConnectionType.NODE),HttpConnection.class);
                     String response = send(connection,"MAP "+addr, this.getName());
-                    NodeDescriptor nd = new Gson().fromJson(response,NodeDescriptor.class);
+                    PeerDescriptor nd = new Gson().fromJson(response,PeerDescriptor.class);
                     this.pendingMapRequests.add(connection);
                     long finish = System.currentTimeMillis();
                     long timeElapsed = finish - start;
-                    EdgeDescriptor ed = new EdgeDescriptor(0L,(long)(timeElapsed/2),new NodeDescriptor[]{nd,this.getInfo()});
+                    EdgeDescriptor ed = new EdgeDescriptor(0L,(long)(timeElapsed/2),new PeerDescriptor[]{nd,this.getInfo()});
                     ng.addEdge(ed);
                 } catch (IOException e1) {
                     e1.printStackTrace();
@@ -440,7 +455,7 @@ public class SparkHTTPServlet extends Com {
         if(this.pendingRcvdRequests != null) {
             for (HttpConnection c : this.pendingRcvdRequests) {
                 try {
-                    send(c, "MAP_RES " + this.getConnections().get(this.getName()) + " " + new Gson().toJson(ng, NetworkGraph.class), "");
+                    send(c, "MAP_RES " + this.connections.get(this.getName()) + " " + new Gson().toJson(ng, NetworkGraph.class), "");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
