@@ -143,7 +143,7 @@ public class SparkHTTPServlet extends Com {
 
     }
 
-    Map<String,Object> pullqueue = new HashMap<>();
+    final Map<String,Object> pullqueue = new HashMap<>();
 
     @Override
     public String getFile(String filename, String location, String fileDestinationNode) {
@@ -166,6 +166,8 @@ public class SparkHTTPServlet extends Com {
                         public void run() {
                             try {
                                 path[0] = pullFile(filename,fileDestinationNode);
+                                pullqueue.put(key,path[0]);
+
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -173,10 +175,9 @@ public class SparkHTTPServlet extends Com {
                     });
                     t.start();
                     pullqueue.put(key, t);
-                    ((Thread)pullqueue.get(key)).join();
+                    //((Thread)pullqueue.get(key)).join();
 
                 }
-                pullqueue.put(key,path[0]);
             }
             System.out.println("Found FILE: "+pullqueue.get(key));
             return  (String) pullqueue.get(key);
