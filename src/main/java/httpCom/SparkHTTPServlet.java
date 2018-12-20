@@ -356,7 +356,7 @@ public class SparkHTTPServlet extends Com {
                         ng = mapNetwork();
                     }
                 }).start();
-                return new Gson().toJson(this.getInfo(), PeerDescriptor.class);
+                return new Gson().toJson(ng, NetworkGraph.class);
             }
             else if (receivedMsg.startsWith("INSTANTIATE")){
                 String[] sa = receivedMsg.split(" ");
