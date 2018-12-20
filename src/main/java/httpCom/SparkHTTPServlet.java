@@ -350,13 +350,16 @@ public class SparkHTTPServlet extends Com {
                 if(this.pendingRcvdRequests == null)
                     this.pendingRcvdRequests = new LinkedList<>();
                 this.pendingRcvdRequests.add(a);
+                //asynchron propagation of mapping request
+                //when it is done, sends the result to the originator
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
                         ng = mapNetwork();
                     }
                 }).start();
-                return new Gson().toJson(ng, NetworkGraph.class);
+                //immediate response with info of the node
+                return new Gson().toJson(this.getInfo(), PeerDescriptor.class);
             }
             else if (receivedMsg.startsWith("INSTANTIATE")){
                 String[] sa = receivedMsg.split(" ");
