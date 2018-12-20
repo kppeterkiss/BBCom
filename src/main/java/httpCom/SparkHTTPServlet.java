@@ -537,6 +537,7 @@ public class SparkHTTPServlet extends Com {
             for (HttpConnection c : this.pendingRcvdRequests) {
                 try {
                     send(c, "MAP_RES " + this.connections.get(this.getName()) + " " + new Gson().toJson(ng, NetworkGraph.class), "");
+                    pendingRcvdRequests.remove(c);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
