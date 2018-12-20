@@ -9,9 +9,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
-    <content url="file://$MODULE_DIR$/../BlackBoxOptimizer">
-      <excludeFolder url="file://$MODULE_DIR$/../BlackBoxOptimizer" />
-    </content>
+    <content url="file://$MODULE_DIR$/../BlackBoxOptimizer" />
     <content url="file://$MODULE_DIR$/../DistCommIF">
       <sourceFolder url="file://$MODULE_DIR$/../DistCommIF/src/main/java" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/../DistCommIF" />
