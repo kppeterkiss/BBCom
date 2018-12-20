@@ -345,12 +345,19 @@ public class SparkHTTPServlet extends Com {
 
             }
             else if(receivedMsg.startsWith("MAP")){
+                if(receivedMsg.startsWith("MAP_RES")){
+                    System.out.println("RESULT OF SUBMAP: "+receivedMsg);
+                    return "x";
+                }
                 String as = receivedMsg.substring(receivedMsg.indexOf(" ")+1,receivedMsg.length());
+                System.out.println("XXXXX "+receivedMsg);
+                System.out.println("XXXXX "+as);
                 HttpConnection a = new Gson().fromJson(as, HttpConnection.class);
                 if(this.pendingRcvdRequests == null)
                     this.pendingRcvdRequests = new LinkedList<>();
-                this.pendingRcvdRequests.add(a);
-                //asynchron propagation of mapping request
+                if(!pendingRcvdRequests.contains(a)){
+                    this.pendingRcvdRequests.add(a);
+                }//asynchron propagation of mapping request
                 //when it is done, sends the result to the originator
                 new Thread(new Runnable() {
                     @Override
@@ -404,7 +411,7 @@ public class SparkHTTPServlet extends Com {
 
 
 
-            System.out.println("MAPPING res: "+new Gson().toJson(this.mapNetwork(),NetworkGraph.class));
+            System.out.println("MAPPING res: "+new Gson().toJson(ng,NetworkGraph.class));
             System.out.println("CONNECTIONS: "+new Gson().toJson(this.connections));
             return new Gson().toJson(this.connections);
 
@@ -479,13 +486,14 @@ public class SparkHTTPServlet extends Com {
     @Override
     public NetworkGraph mapNetwork() {
 
-
+       // NetworkGraph newNg = new NetworkGraph();
         this.pendingMapRequests = new LinkedList<>();
 
 
         //NetworkGraph ng = new NetworkGraph(new LinkedList<>());
         for(Map.Entry<String, List<HttpConnection>> e :this.connections.entrySet()){
             List<HttpConnection> connections = e.getValue();
+            //ask all connections to make a map, except for initiators
             for(HttpConnection connection : connections)
                 if(connection.type.equals(HttpConnectionType.NODE) && !(this.pendingRcvdRequests!= null && !this.pendingRcvdRequests.contains(connection))){
                     try {
@@ -500,6 +508,7 @@ public class SparkHTTPServlet extends Com {
                         long finish = System.currentTimeMillis();
                         long timeElapsed = finish - start;
                         EdgeDescriptor ed = new EdgeDescriptor(0L,(long)(timeElapsed/2),new PeerDescriptor[]{nd,this.getInfo()});
+                        System.out.println("ADDING EDGE");
                         ng.addEdge(ed);
                     } catch (IOException e1) {
                         e1.printStackTrace();
