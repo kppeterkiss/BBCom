@@ -410,7 +410,7 @@ public class SparkHTTPServlet extends Com {
         s.get("/update_map", (request, response) -> {
 
 
-
+            mapNetwork();
             System.out.println("MAPPING res: "+new Gson().toJson(ng,NetworkGraph.class));
             System.out.println("CONNECTIONS: "+new Gson().toJson(this.connections));
             return new Gson().toJson(this.connections);
@@ -508,8 +508,9 @@ public class SparkHTTPServlet extends Com {
                         long finish = System.currentTimeMillis();
                         long timeElapsed = finish - start;
                         EdgeDescriptor ed = new EdgeDescriptor(0L,(long)(timeElapsed/2),new PeerDescriptor[]{nd,this.getInfo()});
+
                         System.out.println("ADDING EDGE");
-                        ng.addEdge(ed);
+                        this.ng.addEdge(ed);
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
@@ -519,7 +520,7 @@ public class SparkHTTPServlet extends Com {
             List<String> answers = receive(this.getName(),"MAP_RES");
             if(answers==null) {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
