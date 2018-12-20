@@ -16,8 +16,27 @@ public class Main {
 
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
 
+        Thread t =new Thread(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("111111");
+
+                try {
+                    Thread.sleep(1000);
+                    System.out.println("111111");
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+       t.join();
+        t.start();
+
+        System.out.println("2222");
         String mode = "";
         String connectionUrl = "";
         if(args.length==1)
