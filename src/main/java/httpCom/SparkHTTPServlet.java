@@ -5,6 +5,7 @@ import bbcom.utils.UnZip;
 import bbcom.utils.Zip;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.InstanceCreator;
 import lib.Address;
 import lib.Com;
 import lib.Connection;
@@ -19,6 +20,7 @@ import java.io.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.net.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -351,7 +353,7 @@ public class SparkHTTPServlet extends Com {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        mapNetwork();
+                        ng = mapNetwork();
                     }
                 }).start();
                 return new Gson().toJson(this.getInfo(), PeerDescriptor.class);
@@ -396,6 +398,8 @@ public class SparkHTTPServlet extends Com {
             return new VelocityTemplateEngine(velocityEngine).render( new ModelAndView(model1, layout));
         });
         s.get("/update_map", (request, response) -> {
+
+
 
             System.out.println("MAPPING res: "+new Gson().toJson(this.mapNetwork(),NetworkGraph.class));
             System.out.println("CONNECTIONS: "+new Gson().toJson(this.connections));
@@ -462,9 +466,17 @@ public class SparkHTTPServlet extends Com {
     // requests need to be answered
     LinkedList<HttpConnection> pendingRcvdRequests;
     static int mapIdCounter = 0;
+    final class CoonectionInstanceCreator implements InstanceCreator<Connection>{
 
+        @Override
+        public Connection createInstance(Type type) {
+            return new HttpConnection();
+        }
+    }
     @Override
     public NetworkGraph mapNetwork() {
+
+
         this.pendingMapRequests = new LinkedList<>();
 
 
@@ -478,7 +490,9 @@ public class SparkHTTPServlet extends Com {
                         //Gson gson = new GsonBuilder().excludeFieldsWithModifiers().setPrettyPrinting().create();
                         String addr = new Gson().toJson(this.getProcessConnectionDescriptor(this.getName(),HttpConnectionType.NODE),HttpConnection.class);
                         String response = send(connection,"MAP "+addr, this.getName());
-                        PeerDescriptor nd = new Gson().fromJson(response,PeerDescriptor.class);
+                        GsonBuilder gsb = new GsonBuilder();
+                        gsb.registerTypeAdapter(Connection.class,CoonectionInstanceCreator.class);
+                        PeerDescriptor nd = gsb.create().fromJson(response,PeerDescriptor.class);
                         this.pendingMapRequests.add(connection);
                         long finish = System.currentTimeMillis();
                         long timeElapsed = finish - start;
@@ -851,6 +865,7 @@ public class SparkHTTPServlet extends Com {
             return port;
         }
 
+        public HttpAddress() {}
         public HttpAddress(String peerId, String processId, String url, int port ) {
             this.peerId = peerId;
             this.processId = processId;
@@ -891,6 +906,8 @@ public class SparkHTTPServlet extends Com {
         public EdgeType eType;
         public HttpConnectionType type;
         public HttpAddress httpAddress;
+
+        public HttpConnection(){}
 
         public HttpConnection(HttpConnectionType type,/* EdgeType eType,*/ HttpAddress httpAddress) {
             this.eType = eType;
