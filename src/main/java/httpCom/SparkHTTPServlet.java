@@ -345,7 +345,7 @@ public class SparkHTTPServlet extends Com {
 
             }
             else if(receivedMsg.startsWith("MAP")){
-                String as = receivedMsg.split(" ")[1];
+                String as = receivedMsg.substring(receivedMsg.indexOf(" ")+1,receivedMsg.length());
                 HttpConnection a = new Gson().fromJson(as, HttpConnection.class);
                 if(this.pendingRcvdRequests == null)
                     this.pendingRcvdRequests = new LinkedList<>();
