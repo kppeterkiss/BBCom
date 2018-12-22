@@ -513,6 +513,7 @@ public class SparkHTTPServlet extends Com {
                         String response = send(connection,"MAP "+addr, this.getName());
                         GsonBuilder gsb = new GsonBuilder();
                         gsb.registerTypeAdapter(Connection.class,new CoonectionInstanceCreator());
+                        gsb.registerTypeAdapter(Address.class,new AddressInstanceCreator());
                         PeerDescriptor nd = gsb.create().fromJson(response,PeerDescriptor.class);
                         this.pendingMapRequests.add(connection);
                         long finish = System.currentTimeMillis();
