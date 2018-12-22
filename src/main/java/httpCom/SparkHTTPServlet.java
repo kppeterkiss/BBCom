@@ -413,7 +413,8 @@ public class SparkHTTPServlet extends Com {
             mapNetwork();
             System.out.println("MAPPING res: "+new Gson().toJson(ng,NetworkGraph.class));
             System.out.println("CONNECTIONS: "+new Gson().toJson(this.connections));
-            return new Gson().toJson(this.connections);
+            return new Gson().toJson(ng,NetworkGraph.class);
+            //return new Gson().toJson(this.connections);
 
         });
         s.awaitInitialization();
@@ -461,7 +462,7 @@ public class SparkHTTPServlet extends Com {
     public HttpAddress getPeerAddress() {
         // TODO: 2018. 12. 04. getpeerid should be the name or name +  address or something
         try {
-            new HttpAddress(this.getPeerId(),this.getName(),this.getPublicIP(), this.defaultPort);
+            return new HttpAddress(this.getPeerId(),this.getName(),this.getPublicIP(), this.defaultPort);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -484,8 +485,9 @@ public class SparkHTTPServlet extends Com {
         }
     }
     @Override
-    public NetworkGraph mapNetwork() {
-
+    public NetworkGraph  mapNetwork() {
+        //ini t a new mapping
+       // ng = new NetworkGraph(new LinkedList<>());
        // NetworkGraph newNg = new NetworkGraph();
         this.pendingMapRequests = new LinkedList<>();
 
@@ -889,6 +891,23 @@ public class SparkHTTPServlet extends Com {
 
         public String getHostAddress(){
             return "http://"+url+":"+port+"/com";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            HttpAddress that = (HttpAddress) o;
+            return port == that.port &&
+                    Objects.equals(peerId, that.peerId) &&
+                    Objects.equals(processId, that.processId) &&
+                    Objects.equals(url, that.url);
+        }
+
+        @Override
+        public int hashCode() {
+
+            return Objects.hash(peerId, processId, url, port);
         }
 
         @Override
