@@ -484,6 +484,14 @@ public class SparkHTTPServlet extends Com {
             return new HttpConnection();
         }
     }
+
+    final class AddressInstanceCreator implements InstanceCreator<Address>{
+
+        @Override
+        public Address createInstance(Type type) {
+            return new HttpAddress();
+        }
+    }
     @Override
     public NetworkGraph  mapNetwork() {
         //ini t a new mapping
