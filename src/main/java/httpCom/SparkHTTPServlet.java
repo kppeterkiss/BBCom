@@ -505,7 +505,7 @@ public class SparkHTTPServlet extends Com {
             List<HttpConnection> connections = e.getValue();
             //ask all connections to make a map, except for initiators
             for(HttpConnection connection : connections)
-                if(connection.type.equals(HttpConnectionType.NODE) && !(this.pendingRcvdRequests!= null && !this.pendingRcvdRequests.contains(connection))){
+                if(connection.type.equals(HttpConnectionType.NODE) && !(this.pendingRcvdRequests!= null && this.pendingRcvdRequests.contains(connection))){
                     try {
                         long start = System.currentTimeMillis();
                         //Gson gson = new GsonBuilder().excludeFieldsWithModifiers().setPrettyPrinting().create();
