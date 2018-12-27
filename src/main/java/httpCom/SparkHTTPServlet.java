@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import spark.template.velocity.VelocityTemplateEngine;
 
 
-public class SparkHTTPServlet extends Com {
+public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkHTTPServlet.HttpAddress> {
 
 
 
@@ -55,8 +55,8 @@ public class SparkHTTPServlet extends Com {
     //public int socketPort = 8902;
     String inetAddress;
     @Override
-    public  Map<String,List<Connection>> getConnections() {
-        Map<String,List<Connection>> res = new HashMap<>();
+    public  Map<String,List<HttpConnection>> getConnections() {
+        Map<String,List<HttpConnection>> res = new HashMap<>();
         this.connections.forEach((k,v)->{res.put(k,new LinkedList<>()); v.forEach(c->res.get(k).add(c));});
         return res;
     }
@@ -454,7 +454,7 @@ public class SparkHTTPServlet extends Com {
 */
 
     @Override
-    public boolean addBidirectionalChannel(Connection descriptor,String processId){
+    public boolean addBidirectionalChannel(HttpConnection descriptor,String processId){
         return connect( (HttpConnection)descriptor,  processId, HttpConnectionType.BIDIRECT) ;
     }
 
@@ -560,20 +560,20 @@ public class SparkHTTPServlet extends Com {
     }
 
     @Override
-    public boolean addOutPutChannel(Connection coordinatorDescriptor, String processId) {
+    public boolean addOutPutChannel(HttpConnection coordinatorDescriptor, String processId) {
         return  connect( (HttpConnection)coordinatorDescriptor,  processId, HttpConnectionType.OUPUT) ;
 
     }
 
     // we set up a channel as an input for the process
     @Override
-    public boolean addInputchannel(Connection descriptor, String processId) {
+    public boolean addInputchannel(HttpConnection descriptor, String processId) {
         return connect((HttpConnection)descriptor,processId, HttpConnectionType.INPUT);
 
     }
     // we set up a channel as an output for the process
     @Override
-    public boolean connectToNetwork(Connection coordinatorDescriptor){
+    public boolean connectToNetwork(HttpConnection coordinatorDescriptor){
         connect((HttpConnection) coordinatorDescriptor,this.peerId, HttpConnectionType.NODE);
         return true;
     }
@@ -667,7 +667,7 @@ public class SparkHTTPServlet extends Com {
     }*/
 
     @Override
-    public String launchRemoteModule(Connection c, String moduleName, String[] arguments) {
+    public String launchRemoteModule(HttpConnection c, String moduleName, String[] arguments) {
         String message = "INSTANTIATE "+moduleName+String.join(" ",arguments);
         String name = "";
         try {
@@ -679,7 +679,7 @@ public class SparkHTTPServlet extends Com {
     }
 
     @Override
-    public String killRemoteModule(Connection c) {
+    public String killRemoteModule(HttpConnection c) {
         String message = "STOP";
         String name = "";
         try {
@@ -691,7 +691,7 @@ public class SparkHTTPServlet extends Com {
     }
 
     @Override
-    public Connection getProcessConnectionDescriptor(String id,ConnectionType type) {
+    public HttpConnection getProcessConnectionDescriptor(String id,ConnectionType type) {
         HttpConnectionType t1 = (HttpConnectionType)type;
         try {
             HttpAddress a = new HttpAddress(this.getPeerId(),id,this.getPublicIP(),this.getDefaultPort());
@@ -707,7 +707,7 @@ public class SparkHTTPServlet extends Com {
 
     // TODO: 2018. 12. 06. this is local!!! not asking the remote node
     @Override
-    public Connection calculateRemoteProcessConnectionDescriptor(String id,Connection c) {
+    public HttpConnection calculateRemoteProcessConnectionDescriptor(String id,Connection c) {
         try {
             HttpAddress a =((HttpConnection)c).httpAddress;
             a = new HttpAddress(a.peerId,id,a.url,a.port);
@@ -722,7 +722,7 @@ public class SparkHTTPServlet extends Com {
 
 
     @Override
-    public boolean addConnectionToRemote(Connection descriptor, String name, Connection descriptor2, ConnectionType connDEscriptor) {
+    public boolean addConnectionToRemote(HttpConnection descriptor, String name, Connection descriptor2, ConnectionType connDEscriptor) {
         //HttpConnectionType t = HttpConnectionType.valueOf((HttpConnectionType)connDEscriptor);
 
         HttpConnection connToBuild = new HttpConnection((HttpConnectionType)connDEscriptor,((HttpConnection)descriptor2).httpAddress);
@@ -742,7 +742,7 @@ public class SparkHTTPServlet extends Com {
 
     // thsi should be sent to one single process
     @Override
-    public boolean startRemoteProcess(Connection descriptor, String name, String[] args) {
+    public boolean startRemoteProcess(HttpConnection descriptor, String name, String[] args) {
         //HttpConnection c = new Gson().fromJson(descriptor,HttpConnection.class);
         String message =  "INSTANAITATE "+name+" ";
         StringJoiner sj = new StringJoiner(" ");
@@ -817,7 +817,7 @@ public class SparkHTTPServlet extends Com {
 
 
     @Override
-    public String send(Connection connection, String msg, String sender) throws IOException {
+    public String send(HttpConnection connection, String msg, String sender) throws IOException {
         HttpConnection connection1 = (HttpConnection)connection;
         //System.out.println("TO "+httpAddress.getProcessId()+"@"+httpAddress.getHostAddress()+" - MSG sent ->"+msg);
         byte[] postDataBytes = msg.getBytes("UTF-8");
