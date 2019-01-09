@@ -403,7 +403,9 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             else if (receivedMsg.startsWith("INSTANTIATE")){
                 String[] sa = receivedMsg.split(" ");
                 String moduleName = sa[1];
-                String processId = sa[2];
+                String processId = null;
+                if(sa.length>2)
+                     processId = sa[2];
                 String args =receivedMsg.substring(receivedMsg.lastIndexOf(moduleName),receivedMsg.length());
                 String name = this.launchModule(moduleName,args.split(" "),processId);
                 System.out.println("INSTANTIATING  "+moduleName+" @ "+to);
@@ -551,7 +553,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
                         this.pendingMapRequests.add(connection);
                         long finish = System.currentTimeMillis();
                         long timeElapsed = finish - start;
-                        NetworkEdge ed = new NetworkEdge(0L,(long)(timeElapsed/2),new PeerDescriptor[]{nd,this.getInfo()});
+                        NetworkEdge ed = new NetworkEdge(0L,(long)(timeElapsed/2),new PeerDescriptor[]{this.getInfo(),nd});
 
                         System.out.println("ADDING EDGE");
                         this.ng.addEdge(ed);
