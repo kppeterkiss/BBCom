@@ -52,6 +52,8 @@ public class Utils {
                     try {
                         System.out.println(filePath.toString());
 
+
+                        //this is ok
                         jarFile = new JarFile(filePath.toString());
                         String mainClassName = (String) jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);;
                         Enumeration<JarEntry> e = jarFile.entries();
@@ -64,7 +66,7 @@ public class Utils {
                                 JarEntry je = e.nextElement();
                                 classnametoprocess[0]= je.getName();
 
-                                if (je.isDirectory() || !je.getName().endsWith(".class") || !je.getName().replace(".class","").equals(mainClassName)) {
+                                if (je.isDirectory() || !je.getName().endsWith(".class") /*|| !je.getName().replace(".class","").equals(mainClassName)*/) {
                                     continue;
 
                                 }

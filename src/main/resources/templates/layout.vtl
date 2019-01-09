@@ -108,7 +108,7 @@
 
 <!-- <body onload = "load();">-->
 <body>
-<nav class="navbar navbar-inverse">
+<!--<nav class="navbar navbar-inverse">
     <div class="container-fluid">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
@@ -117,16 +117,13 @@
                 <span class="icon-bar"></span>
             </button>
             <a class="navbar-brand" href="#"><img height="30" src ="http://localhost:4567/files/elte_plus_ik.png"/></a>
-            <!--<a class="navbar-brand" href="#">Logo</a>-->
         </div>
         <div class="collapse navbar-collapse" id="myNavbar">
             <ul class="nav navbar-nav">
                 <li class="active"><a href='http://localhost:4567/hello'>Start task</a></li>
                 <li><a href="http://localhost:4567/results">Results</a></li>
                 <li><a id="stopLink" href="http://localhost:4567/stop">Stop server</a></li>
-                <!--<li><a id="load" href="http://localhost:4567/stop">Load experiment</a></li>-->
                 <li><a href="#" onclick="performClick('chosenfile');">Load task</a>
-                    <!--<input type="file" id="theFile" style="display:none"/>-->
                     <form id ="setup_file_form" action = "/loadsetup" method="post" enctype="multipart/form-data" style="display:none">
                         <input id ="chosenfile" name="chosenfile" type="file" accept=".json"/>
                         <input type="text" id ="cfn" name="cfn"/>
@@ -136,9 +133,6 @@
                 <li ><a id="savefilenamedisp" href="#" class="disabled_link" onclick="askForName('savefilenamedisp')">Save as: experiments/${filename}</a></li>
 
 
-                <!--<li> <button type="button" onclick="navbar-toggle" data-toggle="collapse" data-target="#myNavbar"></li>-->
-                <!--<li><a href="readme.md">ReadMe</a></li>
-                <li><a href="#">Contact</a></li>-->
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li><a href="https://github.com/kppeterkiss/BlackBoxOptimizer">GitHub</a></li>
@@ -150,14 +144,7 @@
         </div>
     </div>
 </nav>
-<!--<nav class="navbar navbar-inverse">
- <div class="container-fluid">
-     <ul class="nav navbar-nav">
-     <li class="active"><label for="file_to_save">File</label><input id = "file_to_save">Start task</input></li>
-     </ul>
 
- </div>
- </nav>-->
 <script>
     $("#stopLink").on('click', function(e) {
         // prevent the default action, in this case the following of a link
@@ -223,7 +210,7 @@
             // success
         });
     });
-</script>
+</script>-->
 <!-- begin inner template-->
 <!-- <div class="container">-->
     #parse( $template )

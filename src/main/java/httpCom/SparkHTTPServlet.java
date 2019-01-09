@@ -6,14 +6,18 @@ import bbcom.utils.Zip;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.InstanceCreator;
+import com.google.gson.reflect.TypeToken;
 import lib.Address;
 import lib.Com;
 import lib.Connection;
 import lib.ConnectionType;
-import network.EdgeDescriptor;
-import network.NetworkGraph;
-import network.PeerDescriptor;
+import network.*;
 import org.apache.velocity.app.VelocityEngine;
+import plan.CallGraph;
+import plan.ExecutionEdge;
+import plan.NodeDescriptor;
+import plan.RelationMultiplicity;
+import plan.algorithms.StarLayout;
 import spark.*;
 
 import java.io.*;
@@ -45,6 +49,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
 
 
 
+
     //public void setId(String id) {
     //    this.id = id;
     //}
@@ -61,17 +66,44 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         return res;
     }
 
-    // TODO: 2018. 12. 09.  incorportate  map and other things
-    public String buildNetwork() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 
-        String cName = this.launchModule("BBoCoordinator", new String[]{"-apath", "modules/coordinator/"});
+    public String buildNetwork2() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        //
+        String coordId = "Coordinator";
+        NodeDescriptor<HttpAddress> coordNode = new NodeDescriptor<>();
+        coordNode.setArgs(new String[]{"-apath", "modules/coordinator/"});
+        coordNode.setModuleClassName("BBoCoordinator");
+        coordNode.setProcessId(coordId);
+
+        NodeDescriptor<HttpAddress> slave = new NodeDescriptor<>();
+        slave.setArgs(new String[]{});
+        slave.setModuleClassName("BBOSlave");
+        slave.setProcessId("slave");
+        //coordNode.setProcessId("coordinator");
+        ExecutionEdge e = new ExecutionEdge(100,20,new  NodeDescriptor[]{coordNode,slave}, RelationMultiplicity.ONE_TO_MANY);
+        //ExecutionEdge e_ret = new ExecutionEdge(100,20,new  NodeDescriptor[]{slave,coordNode}, RelationMultiplicity.MANY_TO_ONE);
+        List<ExecutionEdge> el = new LinkedList<>();
+        el.add(e);
+        //el.add(e_ret);
+        CallGraph cp = new CallGraph(el,coordId,coordId);
+        CallGraph deploymentPlan = planDeployment(cp,new StarLayout());
+        this.deploy(deploymentPlan);
+
+        return coordId;
+    }
+
+
+    // TODO: 2018. 12. 09.  incorportate  map and other things
+    /*public String buildNetwork() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+
+        String cName = this.launchModule("BBoCoordinator", new String[]{"-apath", "modules/coordinator/"}, "Coordinator");
         //--instantiate  -> sending request to nodes
         //one local worker
         // String wName = this.launchModule("BBOSlave", new String[]{});
         // this supposed to return all the neighbouring node
         System.out.println(getName());
         for(HttpConnection c : this.connections.get(this.getName())){
-            String rwName = this.launchRemoteModule(c, "BBOSlave", new String[]{});
+            String rwName = this.launchRemoteModule(c, "BBOSlave", new String[]{},"slave1");
 
 
 
@@ -80,7 +112,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             this.addBidirectionalChannel(rconn1, cName);
 
 
-            String rwName2 = this.launchRemoteModule(c, "BBOSlave", new String[]{});
+            String rwName2 = this.launchRemoteModule(c, "BBOSlave", new String[]{},"slave2");
 
             SparkHTTPServlet.HttpConnection rconn2 = (SparkHTTPServlet.HttpConnection) this.calculateRemoteProcessConnectionDescriptor(rwName2, c);
 
@@ -89,7 +121,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
 
         }
         return cName;
-    }
+    }*/
 
     public void shotDownNetwork(String id){
         publish("STOP",id);
@@ -137,7 +169,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
                 e.printStackTrace();
             }
         }).start();
-        HttpConnection c =  (HttpConnection) this.getProcessConnectionDescriptor(this.getName(),HttpConnectionType.NODE);
+        HttpConnection c =  (HttpConnection) this.getProcessConnectionDescriptor(this.getName(),EdgeType.NODE);
         c.httpAddress.port = this.defaultSecondaryPort;
         return new File(path).length() +" "+new Gson().toJson(c,HttpConnection.class);
         // }
@@ -329,10 +361,10 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             {
                 String as = receivedMsg.split(" ")[1];
                 HttpConnection a = new Gson().fromJson(as, HttpConnection.class);
-                if(a.type== HttpConnectionType.OUPUT)
-                    a.type = HttpConnectionType.INPUT;
-                if(a.type== HttpConnectionType.INPUT)
-                    a.type = HttpConnectionType.OUPUT;
+                if(a.type== EdgeType.OUPUT)
+                    a.type = EdgeType.INPUT;
+                if(a.type== EdgeType.INPUT)
+                    a.type = EdgeType.OUPUT;
                 this.connections.get(to).add(a);
                 System.out.println("CONNECTION REQUEST - to : "+to+" from: "+as);
 
@@ -371,8 +403,9 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             else if (receivedMsg.startsWith("INSTANTIATE")){
                 String[] sa = receivedMsg.split(" ");
                 String moduleName = sa[1];
+                String processId = sa[2];
                 String args =receivedMsg.substring(receivedMsg.lastIndexOf(moduleName),receivedMsg.length());
-                String name = this.launchModule(moduleName,args.split(" "));
+                String name = this.launchModule(moduleName,args.split(" "),processId);
                 System.out.println("INSTANTIATING  "+moduleName+" @ "+to);
                 return name;
 
@@ -454,8 +487,8 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
 */
 
     @Override
-    public boolean addBidirectionalChannel(HttpConnection descriptor,String processId){
-        return connect( (HttpConnection)descriptor,  processId, HttpConnectionType.BIDIRECT) ;
+    public boolean addBidirectionalChannel(HttpAddress descriptor,String processId){
+        return connect( descriptor,  processId, EdgeType.BIDIRECT) ;
     }
 
     @Override
@@ -505,20 +538,20 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             List<HttpConnection> connections = e.getValue();
             //ask all connections to make a map, except for initiators
             for(HttpConnection connection : connections)
-                if(connection.type.equals(HttpConnectionType.NODE) && !(this.pendingRcvdRequests!= null && this.pendingRcvdRequests.contains(connection))){
+                if(connection.type.equals(EdgeType.NODE) && !(this.pendingRcvdRequests!= null && this.pendingRcvdRequests.contains(connection))){
                     try {
                         long start = System.currentTimeMillis();
                         //Gson gson = new GsonBuilder().excludeFieldsWithModifiers().setPrettyPrinting().create();
-                        String addr = new Gson().toJson(this.getProcessConnectionDescriptor(this.getName(),HttpConnectionType.NODE),HttpConnection.class);
-                        String response = send(connection,"MAP "+addr, this.getName());
+                        String addr = new Gson().toJson(this.getProcessConnectionDescriptor(this.getName(),EdgeType.NODE),HttpConnection.class);
+                        String response = send(connection.httpAddress,"MAP "+addr, this.getName());
                         GsonBuilder gsb = new GsonBuilder();
-                        gsb.registerTypeAdapter(Connection.class,new CoonectionInstanceCreator());
-                        gsb.registerTypeAdapter(Address.class,new AddressInstanceCreator());
-                        PeerDescriptor nd = gsb.create().fromJson(response,PeerDescriptor.class);
+                        //gsb.registerTypeAdapter(Connection.class,new CoonectionInstanceCreator());
+                        //gsb.registerTypeAdapter(Address.class,new AddressInstanceCreator());
+                        PeerDescriptor<HttpAddress,HttpConnection> nd = gsb.create().fromJson(response,new TypeToken<PeerDescriptor<HttpAddress,HttpConnection>>(){}.getType());
                         this.pendingMapRequests.add(connection);
                         long finish = System.currentTimeMillis();
                         long timeElapsed = finish - start;
-                        EdgeDescriptor ed = new EdgeDescriptor(0L,(long)(timeElapsed/2),new PeerDescriptor[]{nd,this.getInfo()});
+                        NetworkEdge ed = new NetworkEdge(0L,(long)(timeElapsed/2),new PeerDescriptor[]{nd,this.getInfo()});
 
                         System.out.println("ADDING EDGE");
                         this.ng.addEdge(ed);
@@ -548,56 +581,73 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         if(this.pendingRcvdRequests != null) {
             for (HttpConnection c : this.pendingRcvdRequests) {
                 try {
-                    send(c, "MAP_RES " + this.connections.get(this.getName()) + " " + new Gson().toJson(ng, NetworkGraph.class), "");
+                    send(c.httpAddress, "MAP_RES " + this.connections.get(this.getName()) + " " + new Gson().toJson(ng, NetworkGraph.class), "");
                     pendingRcvdRequests.remove(c);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
+
         this.pendingMapRequests = new LinkedList<>();
+        ng.setRoot(this.getInfo());
         return ng;
     }
 
     @Override
-    public boolean addOutPutChannel(HttpConnection coordinatorDescriptor, String processId) {
-        return  connect( (HttpConnection)coordinatorDescriptor,  processId, HttpConnectionType.OUPUT) ;
+    public boolean addOutPutChannel(HttpAddress addressToConnect, String initiatingProcessId) {
+        return  connect( addressToConnect,  initiatingProcessId, EdgeType.OUPUT) ;
 
     }
 
     // we set up a channel as an input for the process
     @Override
-    public boolean addInputchannel(HttpConnection descriptor, String processId) {
-        return connect((HttpConnection)descriptor,processId, HttpConnectionType.INPUT);
+    public boolean addInputchannel(HttpAddress addressToConnect, String initiatingProcessId) {
+        return connect(addressToConnect,initiatingProcessId, EdgeType.INPUT);
 
     }
     // we set up a channel as an output for the process
     @Override
-    public boolean connectToNetwork(HttpConnection coordinatorDescriptor){
-        connect((HttpConnection) coordinatorDescriptor,this.peerId, HttpConnectionType.NODE);
+    public boolean connectToNetwork(HttpAddress peerAddressToConnect){
+        connect(peerAddressToConnect,this.peerId, EdgeType.NODE);
         return true;
+    }
+
+    @Override
+    public boolean sendConnectionRequest(NodeDescriptor<HttpAddress> nd1, NodeDescriptor<HttpAddress> nd2) {
+        return false;
     }
 
     //processname should be here..
     // TODO: 2018. 12. 04. type is redundant
-    public boolean connect(HttpConnection connectionDescriptor, String processId,HttpConnectionType type)  {
+
+    /**
+     *
+     * @param addressToConnect the address of the process to connect
+     * @param initiatingProcessId process that required to build the connection
+     * @param type type of the connection
+     * @return
+     */
+    public boolean connect(HttpAddress addressToConnect, String initiatingProcessId,EdgeType type)  {
 
         // httpAddress of node to be connected
         //HttpConnection c  = new Gson().fromJson(coordinatorDescriptor,HttpConnection.class);
         //trying to connect to ourself at building up the network
-        if(connectionDescriptor.httpAddress.peerId.equals(this.peerId) && processId.equals(this.peerId))
+        if(addressToConnect.peerId.equals(this.peerId) && initiatingProcessId.equals(this.peerId))
             return true;
-        if(!this.connections.containsKey(processId))
-            this.connections.put(processId,new LinkedList<>());
+        if(!this.connections.containsKey(initiatingProcessId))
+            this.connections.put(initiatingProcessId,new LinkedList<>());
         // List<HttpConnection> connections = this.connections.get(processId);
         // if(connections == null)
         //     connections =  new LinkedList<>();
 
+        HttpConnection connection = new HttpConnection();
+        connection.httpAddress = addressToConnect;
+        connection.type = type;
+        this.connections.get(initiatingProcessId).add(connection);
 
-        this.connections.get(processId).add(connectionDescriptor);
 
-
-        HttpConnection connectionInfoOfThis = (SparkHTTPServlet.HttpConnection)this.getProcessConnectionDescriptor(processId,type);
+        HttpConnection connectionInfoOfThis = this.getProcessConnectionDescriptor(initiatingProcessId,type);
 
 
         // add the slave process addreslist to the node connections
@@ -609,9 +659,9 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         //  this.inetAddress = "http://"+getPublicIP()+":"+this.defaultPort+"/com";
         //getPublicIP();
         //this.publish("CONNECT "+ new Gson().toJson(new HttpAddress(this.id,processId,getPublicIP(), port),HttpAddress.class), processId);
-        // this.publish("CONNECT "+ new Gson().toJson(new HttpConnection(HttpConnectionType.BIDIRECT,new HttpAddress(this.peerId,processId,"localhost", this.defaultPort)),HttpConnection.class), processId);
+        // this.publish("CONNECT "+ new Gson().toJson(new HttpConnection(EdgeType.BIDIRECT,new HttpAddress(this.peerId,processId,"localhost", this.defaultPort)),HttpConnection.class), processId);
         try {
-            this.send(connectionDescriptor,"CONNECT "+ new Gson().toJson(connectionInfoOfThis,HttpConnection.class), processId);
+            this.send(addressToConnect,"CONNECT "+ new Gson().toJson(connectionInfoOfThis,HttpConnection.class), initiatingProcessId);
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -667,11 +717,11 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
     }*/
 
     @Override
-    public String launchRemoteModule(HttpConnection c, String moduleName, String[] arguments) {
+    public String launchRemoteModule(HttpAddress remoteProcessAddress, String moduleName, String[] arguments,String processId) {
         String message = "INSTANTIATE "+moduleName+String.join(" ",arguments);
         String name = "";
         try {
-            name = send(c,message,this.peerId);
+            name = send(remoteProcessAddress,message,this.peerId);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -679,11 +729,11 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
     }
 
     @Override
-    public String killRemoteModule(HttpConnection c) {
+    public String killRemoteModule(HttpAddress remoteProcessAddress) {
         String message = "STOP";
         String name = "";
         try {
-            name = send(c,message,this.peerId);
+            name = send(remoteProcessAddress,message,this.peerId);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -691,8 +741,8 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
     }
 
     @Override
-    public HttpConnection getProcessConnectionDescriptor(String id,ConnectionType type) {
-        HttpConnectionType t1 = (HttpConnectionType)type;
+    public HttpConnection getProcessConnectionDescriptor(String id,EdgeType type) {
+        EdgeType t1 = type;
         try {
             HttpAddress a = new HttpAddress(this.getPeerId(),id,this.getPublicIP(),this.getDefaultPort());
             return new HttpConnection(t1,a);
@@ -711,7 +761,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         try {
             HttpAddress a =((HttpConnection)c).httpAddress;
             a = new HttpAddress(a.peerId,id,a.url,a.port);
-            return new HttpConnection(HttpConnectionType.BIDIRECT,a);
+            return new HttpConnection(EdgeType.BIDIRECT,a);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -722,17 +772,17 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
 
 
     @Override
-    public boolean addConnectionToRemote(HttpConnection descriptor, String name, Connection descriptor2, ConnectionType connDEscriptor) {
-        //HttpConnectionType t = HttpConnectionType.valueOf((HttpConnectionType)connDEscriptor);
+    public boolean addConnectionToRemote(HttpAddress descriptor, String name, Connection descriptor2, EdgeType edgeType) {
+        //EdgeType t = EdgeType.valueOf((EdgeType)connDEscriptor);
 
-        HttpConnection connToBuild = new HttpConnection((HttpConnectionType)connDEscriptor,((HttpConnection)descriptor2).httpAddress);
+        HttpConnection connToBuild = new HttpConnection((EdgeType)edgeType,((HttpConnection)descriptor2).httpAddress);
         //where to publish
         //HttpConnection c = new Gson().fromJson(descriptor,HttpConnection.class);
         // name is the name of the process that we want to connect with connToBuild
         String message =  "CONNECT "+name+" "+connToBuild;
         String response = "";
         try {
-            response = send((HttpConnection)descriptor,message,this.peerId);
+            response = send(descriptor,message,this.peerId);
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -741,8 +791,8 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
     }
 
     // thsi should be sent to one single process
-    @Override
-    public boolean startRemoteProcess(HttpConnection descriptor, String name, String[] args) {
+   /* @Override
+    public boolean launchRemoteModule(HttpConnection descriptor, String name, String[] args, String processId) {
         //HttpConnection c = new Gson().fromJson(descriptor,HttpConnection.class);
         String message =  "INSTANAITATE "+name+" ";
         StringJoiner sj = new StringJoiner(" ");
@@ -760,7 +810,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         }
         return true;
 
-    }
+    }*/
 
 
     public String publish(String msg, String sender) {
@@ -768,8 +818,8 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         List<String> responses = new ArrayList<>();
         for(HttpConnection connection: connections.get(sender)){//make a http post with the msg
             try {
-                if(connection.type == HttpConnectionType.BIDIRECT || connection.type == HttpConnectionType.OUPUT || connection.type == HttpConnectionType.NODE) {
-                    responses.add(send( connection, msg,sender));
+                if(connection.type == EdgeType.BIDIRECT || connection.type == EdgeType.OUPUT || connection.type == EdgeType.NODE) {
+                    responses.add(send( connection.httpAddress, msg,sender));
                 }
                 else
                     return null;
@@ -790,7 +840,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         List<String> responses = new ArrayList<>();
         List<HttpConnection> interestedConns = connections.get(sender)
                 .stream()
-                .filter(connection->connection.type == HttpConnectionType.BIDIRECT || connection.type == HttpConnectionType.OUPUT || connection.type == HttpConnectionType.NODE)
+                .filter(connection->connection.type == EdgeType.BIDIRECT || connection.type == EdgeType.OUPUT || connection.type == EdgeType.NODE)
                 .collect(Collectors.toList());
         int pernode = (int)((float)msgs.size() / interestedConns.size()+0.5f);
         for(HttpConnection c : interestedConns){
@@ -806,7 +856,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             System.out.println(msg);
             System.out.println("----------------------");
             try {
-                responses.add(send(c, msg, sender));
+                responses.add(send(c.httpAddress, msg, sender));
             } catch (IOException e) {
                 // TODO: 2018. 12. 14. maybe try to send elswhere
                 e.printStackTrace();
@@ -817,13 +867,13 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
 
 
     @Override
-    public String send(HttpConnection connection, String msg, String sender) throws IOException {
-        HttpConnection connection1 = (HttpConnection)connection;
+    public String send(HttpAddress address, String msg, String sender) throws IOException {
+
         //System.out.println("TO "+httpAddress.getProcessId()+"@"+httpAddress.getHostAddress()+" - MSG sent ->"+msg);
         byte[] postDataBytes = msg.getBytes("UTF-8");
         String query = String.format("To=%s",
-                URLEncoder.encode(connection1.httpAddress.getProcessId(), "UTF-8"));
-        HttpURLConnection conn = (HttpURLConnection) (new URL(connection1.httpAddress.getHostAddress() + "?" + query).openConnection());
+                URLEncoder.encode(address.getProcessId(), "UTF-8"));
+        HttpURLConnection conn = (HttpURLConnection) (new URL(address.getHostAddress() + "?" + query).openConnection());
         //URL obj = new URL(httpAddress.url);
         //HttpURLConnection conn = (HttpURLConnection) obj.openConnection();
         conn.setRequestMethod("POST");
@@ -889,8 +939,10 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         public int getPort() {
             return port;
         }
-
-        public HttpAddress() {}
+        public HttpAddress(){}
+        public HttpAddress(HttpAddress other) {
+            this(other.peerId,other.processId,other.url,other.port);
+        }
         public HttpAddress(String peerId, String processId, String url, int port ) {
             this.peerId = peerId;
             this.processId = processId;
@@ -930,29 +982,34 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         }
 
 
+        @Override
+        public Address resolveProcessAddress(String processId) {
+            return new HttpAddress(peerId,processId,url,port);
+        }
     }
 
     /* public static class connrctionRequest{
          String id, url,
 
      }*/
-    public enum HttpConnectionType implements ConnectionType {
+    /*public enum EdgeType implements ConnectionType {
         INPUT,OUPUT,NODE,BIDIRECT;
     }
 
+    // TODO: 2018. 12. 28. not necessary probably 
     public enum EdgeType {
         PARALLEL, PARTITIOM;
-    }
+    }*/
 
-    public static class HttpConnection implements Connection {
-        public EdgeType eType;
-        public HttpConnectionType type;
+    public static class HttpConnection extends Connection<HttpAddress> {
+        //public EdgeType eType;
+        public EdgeType type;
         public HttpAddress httpAddress;
 
         public HttpConnection(){}
 
-        public HttpConnection(HttpConnectionType type,/* EdgeType eType,*/ HttpAddress httpAddress) {
-            this.eType = eType;
+        public HttpConnection(EdgeType type,/* EdgeType eType,*/ HttpAddress httpAddress) {
+           // this.eType = eType;
             this.type = type;
             this.httpAddress = httpAddress;
         }
@@ -974,7 +1031,6 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         @Override
         public String toString() {
             return "HttpConnection{" +
-                    "eType=" + eType +
                     ", type=" + type +
                     ", httpAddress=" + httpAddress +
                     '}';

@@ -3,6 +3,7 @@ package bbcom;
 import com.google.gson.Gson;
 import httpCom.SparkHTTPServlet;
 import lib.Com;
+import network.EdgeType;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -69,21 +70,21 @@ public class Main {
             c.start();
             c.join();
             System.out.println("=======================================");
-            System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), SparkHTTPServlet.HttpConnectionType.NODE), SparkHTTPServlet.HttpConnection.class));
+            System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), SparkHTTPServlet.EdgeType.NODE), SparkHTTPServlet.HttpConnection.class));
             System.out.println("=======================================");*/
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String userinput ="";
 
-            if(mode.equals("primary")) {
+            /*if(mode.equals("primary")) {
                 try {
                     String nodeName = "node_1";
-                    Com c = new SparkHTTPServlet(/*addresses,*/port,nodeName);
+                    Com c = new SparkHTTPServlet(port,nodeName);
                     //boolean reacheable = ((SparkHTTPServlet)c).testPort();
                     c.start();
                     c.join();
                     System.out.println("=======================================");
-                    System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), SparkHTTPServlet.HttpConnectionType.NODE), SparkHTTPServlet.HttpConnection.class));
+                    System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), SparkHTTPServlet.EdgeType.NODE), SparkHTTPServlet.HttpConnection.class));
                     System.out.println("=======================================");
                     String cName = c.launchModule("BBoCoordinator", new String[]{"-apath", "modules/coordinator/"});
                     //--instantiate  -> sending request to nodes
@@ -110,9 +111,9 @@ public class Main {
                     c.addBidirectionalChannel(rconn1, cName);
                     c.addBidirectionalChannel(rconn2, cName);
 
-                    SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName, SparkHTTPServlet.HttpConnectionType.BIDIRECT);
+                    SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName, SparkHTTPServlet.EdgeType.BIDIRECT);
 
-                    //conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
+                    //conn.type = SparkHTTPServlet.EdgeType.BIDIRECT;
                     c.addBidirectionalChannel(conn, cName);
 
                 } catch (NoSuchMethodException e) {
@@ -121,32 +122,35 @@ public class Main {
                     e.printStackTrace();
                 }
             }// we connect to an existing node
-            else if(!connectionUrl.equals("")){
+            else */if(!connectionUrl.equals("")){
                 String nodeName = "node_2";
                 Com c = new SparkHTTPServlet(/*addresses,*/port,nodeName);
                 //boolean reacheable = ((SparkHTTPServlet)c).testPort();
                 c.start();
                 c.join();
                 System.out.println("=======================================");
-                System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), SparkHTTPServlet.HttpConnectionType.NODE), SparkHTTPServlet.HttpConnection.class));
+                System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), EdgeType.NODE), SparkHTTPServlet.HttpConnection.class));
                 System.out.println("=======================================");
                 SparkHTTPServlet.HttpConnection nodeConnectionToConnect = new Gson().fromJson(connectionUrl, SparkHTTPServlet.HttpConnection.class);
-                if(nodeConnectionToConnect.type.equals(SparkHTTPServlet.HttpConnectionType.NODE))
-                    nodeConnectionToConnect.type = SparkHTTPServlet.HttpConnectionType.NODE;
-                c.connectToNetwork(nodeConnectionToConnect/*, c.getName()*/);
+                if(nodeConnectionToConnect.type.equals(EdgeType.NODE))
+                    nodeConnectionToConnect.type = EdgeType.NODE;
+                c.connectToNetwork(nodeConnectionToConnect.httpAddress/*, c.getName()*/);
 
 
             }
             else if (mode.equals("local")){
                 String nodeName = "node_1";
-                Com c = new SparkHTTPServlet(/*addresses,*/port,nodeName);
+                Com c = new SparkHTTPServlet(port,nodeName);
                 //boolean reacheable = ((SparkHTTPServlet)c).testPort();
                 c.start();
                 c.join();
                 System.out.println("=======================================");
-                System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), SparkHTTPServlet.HttpConnectionType.NODE), SparkHTTPServlet.HttpConnection.class));
+                System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), EdgeType.NODE), SparkHTTPServlet.HttpConnection.class));
                 System.out.println("=======================================");
 
+                ((SparkHTTPServlet)c).buildNetwork2();
+
+/*
                 String cName = c.launchModule("BBoCoordinator", new String[]{"-apath", "modules/coordinator/"});
                 //--instantiate  -> sending request to nodes
                 //one local worker
@@ -154,11 +158,12 @@ public class Main {
                 String wName1 = c.launchModule("BBOSlave", new String[]{});
 
 
-                SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName, SparkHTTPServlet.HttpConnectionType.BIDIRECT);
-                SparkHTTPServlet.HttpConnection conn1 = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName1, SparkHTTPServlet.HttpConnectionType.BIDIRECT);
-                //conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
+                SparkHTTPServlet.HttpConnection conn = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName, SparkHTTPServlet.EdgeType.BIDIRECT);
+                SparkHTTPServlet.HttpConnection conn1 = (SparkHTTPServlet.HttpConnection) c.getProcessConnectionDescriptor(wName1, SparkHTTPServlet.EdgeType.BIDIRECT);
+                //conn.type = SparkHTTPServlet.EdgeType.BIDIRECT;
                 c.addBidirectionalChannel(conn, cName);
-                c.addBidirectionalChannel(conn1, cName);
+                c.addBidirectionalChannel(conn1, cName);*/
+
             }
             else if(mode.equals("starter")){
                 String nodeName = "node_1";
@@ -167,7 +172,7 @@ public class Main {
                 c.start();
                 c.join();
                 System.out.println("=======================================");
-                System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), SparkHTTPServlet.HttpConnectionType.NODE), SparkHTTPServlet.HttpConnection.class));
+                System.out.println("NODE ADDRESS => "+new Gson().toJson(c.getProcessConnectionDescriptor(c.getName(), EdgeType.NODE), SparkHTTPServlet.HttpConnection.class));
                 System.out.println("=======================================");
                 String c_name = "";
                 while (!userinput.equals("STOP")) {
@@ -175,7 +180,7 @@ public class Main {
                     System.out.println("user input : "+userinput);
                     //at the coordinator node we build up the network
                     if(userinput.toUpperCase().equals("BUILD"))
-                        c_name = ((SparkHTTPServlet)c).buildNetwork();
+                        c_name = ((SparkHTTPServlet)c).buildNetwork2();
                 }
                 ((SparkHTTPServlet)c).shotDownNetwork(c_name);
             }

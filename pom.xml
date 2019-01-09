@@ -80,11 +80,11 @@
 
 
         <!-- https://mvnrepository.com/artifact/com.github.docker-java/docker-java -->
-        <dependency>
+        <!--<dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java</artifactId>
             <version>3.0.14</version>
-        </dependency>
+        </dependency>-->
         <!-- https://mvnrepository.com/artifact/junit/junit -->
         <dependency>
             <groupId>junit</groupId>

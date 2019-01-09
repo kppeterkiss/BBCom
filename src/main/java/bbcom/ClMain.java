@@ -2,6 +2,7 @@ package bbcom;
 
 import httpCom.SparkHTTPServlet;
 import lib.Com;
+import network.EdgeType;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,14 +32,14 @@ public class ClMain {
             c.start();
             c.join();
             try {
-                String cName = c.launchModule("BBoCoordinator",new String[]{"-apath" ,"modules/coordinator/"});
-                String wName = c.launchModule("BBOSlave",null);
+                String cName = c.launchModule("BBoCoordinator",new String[]{"-apath" ,"modules/coordinator/"},null);
+                String wName = c.launchModule("BBOSlave",null,null);
                 //String rWName = c.launchRemoteModule(,"BBOSlave",null);
 
                 //String wName2 = c.launchModule("BBOSlave",null);
-                SparkHTTPServlet.HttpConnection conn = ( SparkHTTPServlet.HttpConnection)c.getProcessConnectionDescriptor(wName, SparkHTTPServlet.HttpConnectionType.BIDIRECT); // type not sure
-                conn.type = SparkHTTPServlet.HttpConnectionType.BIDIRECT;
-                c.addBidirectionalChannel(conn,cName);
+                SparkHTTPServlet.HttpConnection conn = ( SparkHTTPServlet.HttpConnection)c.getProcessConnectionDescriptor(wName, EdgeType.BIDIRECT); // type not sure
+                conn.type = EdgeType.BIDIRECT;
+                c.addBidirectionalChannel(conn.httpAddress,cName);
 
             } catch (NoSuchMethodException e) {
                 e.printStackTrace();

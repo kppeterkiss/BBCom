@@ -14,60 +14,75 @@ function start(port) {
 
     var node_list = [];
     var edge_list = [];
+    let counter = 0;
+    let node_name_id_map={};
 
 
+    function extracted(node_o,node_o_name) {
+        $.each(node_o['connections'], function (node_name, node_connectionList) {
+            node_name += "@" + node_o_name;
+            if (!(node_name in node_name_id_map)) {
+                //node_list.push(node_name);
+                node_list.push({'id':counter,'label':node_name});
+                node_name_id_map[ node_name] = counter++;
+            }
+            //connect the peer to the node processes
+            edge_list.push({from: node_name_id_map[node_o_name], to: node_name_id_map[node_name]})
+            $.each(node_connectionList, function (idx, connection) {
+                let proc_name =connection['httpAddress']['processId']+ "@" + connection['httpAddress']['peerId']  ;
+                if (!(proc_name in node_name_id_map)) {
+                    //node_list.push(proc_name);
+                    node_list.push({'id':counter,'label':proc_name});
+                    node_name_id_map[ proc_name] = counter++;
+                    edge_list.push({from: node_name_id_map[node_name], to: node_name_id_map[proc_name]})
+                }
+            });
 
-    $.get(url, function (data1) {
-        alert(data1)
+
+        });
+    }
+
+    $.get(url, function (data1) {        // alert(data1)
 
         var graph_map = JSON.parse(data1);
         var orig_edge_list = graph_map['edgeList'];
         for(var e of orig_edge_list){
-            let node1 = e['nodes'][0]['address']['peerId'];
-            let node2 = e['nodes'][1]['address']['peerId'];
-            if(!node_list.includes(node1)) {
-                node_list.push(node1);
+            let node1 = e['nodes'][0]
+            let node2 = e['nodes'][1]
+            let node1_name = node1['address']['peerId'];
+            let node2_name = node2['address']['peerId'];
+            if(!(node1_name in node_name_id_map)) {
+                node_list.push({'id':counter,'label':node1_name});
+                node_name_id_map[ node1_name] = counter++;
             }
-            if(!node_list.includes(node2)) {
-                node_list.push(node2);
-            }
-            edge_list.push({from: node1, to: node2})
+            if(!(node2_name in node_name_id_map)) {
+                node_list.push({'id':counter,'label':node2_name});
+                node_name_id_map[node2_name] = counter++;
 
-            $.each(node1['connections'] ,function(node_name,node_connectionList) {
-                node_name += node1 + "@" + node_name;
+            }
+            edge_list.push({from: node_name_id_map[node1_name], to: node_name_id_map[node2_name]})
+
+            extracted(node1, node1_name);
+            extracted(node2,node2_name);
+
+
+
+           /* $.each(node2['connections'] ,function(node_name,node_connectionList) {
+                node_name += "@" + node2_name;
                 if (!node_list.includes(node_name)) {
                     node_list.push(node_name);
                 }
                 //connect the peer to the node processes
-                edge_list.push({from: node1, to: node_name})
-                $.each(node_connectionList, function (connection) {
-                    let proc_name = connection['peerId'] + "@" + connection['processId'];
+                edge_list.push({from: node2_name, to: node_name})
+                $.each(node_connectionList, function (idx,connection) {
+                    let proc_name = connection['httpAddress']['peerId'] + "@" + connection['httpAddress']['processId'];
                     if (!node_list.includes(proc_name)) {
                         node_list.push(proc_name);
                         edge_list.push({from: node_name, to: proc_name})
                     }});
 
 
-            });
-
-
-
-                $.each(node2['connections'] ,function(node_name,node_connectionList) {
-                    node_name += node1 + "@" + node_name;
-                    if (!node_list.includes(node_name)) {
-                        node_list.push(node_name);
-                    }
-                    //connect the peer to the node processes
-                    edge_list.push({from: nod2, to: node_name})
-                    $.each(node_connectionList, function (connection) {
-                        let proc_name = connection['peerId'] + "@" + connection['processId'];
-                        if (!node_list.includes(proc_name)) {
-                            node_list.push(proc_name);
-                            edge_list.push({from: node_name, to: proc_name})
-                        }});
-
-
-                    });
+            });*/
 
 
 
@@ -97,11 +112,10 @@ function start(port) {
                     }
                     edge_list.push({from: start_node_id, to: end_node_id})
                 }
-
-            }
-        );*/
-        nodes = new vis.DataSet(node_list);
-        edges = new vis.DataSet(edge_list);
+*/
+//        let new_node_list
+        let nodes = new vis.DataSet(node_list);
+        let edges = new vis.DataSet(edge_list);
         var container = document.getElementById('chart_container');
 
         // provide the data in the vis format
@@ -116,7 +130,7 @@ function start(port) {
     });
 
 
-    var nodes, edges;
+   // var nodes, edges;
     setTimeout(function(){
         start(port);
     }, 10000);
