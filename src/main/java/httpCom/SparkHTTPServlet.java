@@ -359,14 +359,15 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             // these to be handled by the peer, no need to add to the messages
             if (receivedMsg.startsWith("CONNECT"))
             {
-                String as = receivedMsg.split(" ")[1];
-                HttpConnection a = new Gson().fromJson(as, HttpConnection.class);
-                if(a.type== EdgeType.OUPUT)
-                    a.type = EdgeType.INPUT;
-                if(a.type== EdgeType.INPUT)
-                    a.type = EdgeType.OUPUT;
-                this.connections.get(to).add(a);
-                System.out.println("CONNECTION REQUEST - to : "+to+" from: "+as);
+                String connectionToBuildString = receivedMsg.split(" ")[1];
+                HttpConnection connetionToBuild = new Gson().fromJson(connectionToBuildString, HttpConnection.class);
+                System.out.println("CONNECTION REQUEST - to : "+to+" from: "+connectionToBuildString);
+                if(connetionToBuild.type== EdgeType.OUPUT)
+                    connetionToBuild.type = EdgeType.INPUT;
+                if(connetionToBuild.type== EdgeType.INPUT)
+                    connetionToBuild.type = EdgeType.OUPUT;
+                this.connections.get(to).add(connetionToBuild);
+                System.out.println("Connection added:" + connetionToBuild.toString());
 
             }
             else if(receivedMsg.startsWith("DISCONNECT")){
@@ -382,8 +383,8 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
                     return "x";
                 }
                 String as = receivedMsg.substring(receivedMsg.indexOf(" ")+1,receivedMsg.length());
-                System.out.println("XXXXX "+receivedMsg);
-                System.out.println("XXXXX "+as);
+                System.out.println("Mapping request received - "+receivedMsg);
+                System.out.println("Mapping request from:  "+as);
                 HttpConnection a = new Gson().fromJson(as, HttpConnection.class);
                 if(this.pendingRcvdRequests == null)
                     this.pendingRcvdRequests = new LinkedList<>();
@@ -604,8 +605,8 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
 
     // we set up a channel as an input for the process
     @Override
-    public boolean addInputchannel(HttpAddress addressToConnect, String initiatingProcessId) {
-        return connect(addressToConnect,initiatingProcessId, EdgeType.INPUT);
+    public boolean addInputchannel(HttpAddress addressOfNodeToConnect, String processIdOfConnInitiator) {
+        return connect(addressOfNodeToConnect, processIdOfConnInitiator, EdgeType.INPUT);
 
     }
     // we set up a channel as an output for the process
@@ -890,7 +891,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         for (int c; (c = in.read()) >= 0; )
             sb.append((char) c);
         String response = sb.toString();
-        System.out.println("Response from: " + response);
+        System.out.println("Response received from: "+address.toString()+" ==> message: " + response);
         return response;
     }
 
