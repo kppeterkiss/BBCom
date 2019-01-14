@@ -588,7 +588,9 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
                     System.out.println("Sending submap to initiator");
                     System.out.println("Submap: " + submapJson);
                     System.out.println("Sending to: "+ c.httpAddress.toString());
-                    send(c.httpAddress, "MAP_RES " + this.connections.get(this.getName()) + " " +submapJson, "");
+                    //why this
+                   // send(c.httpAddress, "MAP_RES " + this.connections.get(this.getName()) + " " +submapJson, "");
+                    send(c.httpAddress, "MAP_RES " + new Gson().toJson(this.connections.get(this.getName()),HttpConnection.class) + " " +submapJson, "");
                     pendingRcvdRequests.remove(c);
                 } catch (IOException e) {
                     e.printStackTrace();
