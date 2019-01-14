@@ -380,6 +380,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             else if(receivedMsg.startsWith("MAP")){
                 if(receivedMsg.startsWith("MAP_RES")){
                     System.out.println("RESULT OF SUBMAP: "+receivedMsg);
+                    this.messages.get(to).add(receivedMsg);
                     return "x";
                 }
                 String as = receivedMsg.substring(receivedMsg.indexOf(" ")+1,receivedMsg.length());
@@ -567,6 +568,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             List<String> answers = receive(this.getName(),"MAP_RES");
             if(answers==null) {
                 try {
+                    System.out.println("Waiting for submap results...");
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -575,6 +577,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             }
             for(String s : answers){
                 String[] sa = s.split(" ");
+                System.out.println("Adding submap from: "+ sa[1]);
                 HttpConnection c = new Gson().fromJson(sa[1],HttpConnection.class);
                 pendingMapRequests.remove(c);
                 NetworkGraph graph = new Gson().fromJson(s,NetworkGraph.class);
@@ -598,6 +601,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
 
         this.pendingMapRequests = new LinkedList<>();
         ng.setRoot(this.getInfo());
+        System.out.println("Mapping finished.");
         return ng;
     }
 
@@ -922,7 +926,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
                     System.out.println("Discarded message");
         }
 
-        return messages.get(id);
+        return ret;
     }
 
     public static class HttpAddress implements Address{
