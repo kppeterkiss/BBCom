@@ -584,7 +584,11 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
         if(this.pendingRcvdRequests != null) {
             for (HttpConnection c : this.pendingRcvdRequests) {
                 try {
-                    send(c.httpAddress, "MAP_RES " + this.connections.get(this.getName()) + " " + new Gson().toJson(ng, NetworkGraph.class), "");
+                    String submapJson =  new Gson().toJson(ng, NetworkGraph.class);
+                    System.out.println("Sending submap to initiator");
+                    System.out.println("Submap: " + submapJson);
+                    System.out.println("Sending to: "+ c.httpAddress.toString());
+                    send(c.httpAddress, "MAP_RES " + this.connections.get(this.getName()) + " " +submapJson, "");
                     pendingRcvdRequests.remove(c);
                 } catch (IOException e) {
                     e.printStackTrace();
