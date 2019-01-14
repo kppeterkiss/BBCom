@@ -10,9 +10,7 @@
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <content url="file://$MODULE_DIR$/../BlackBoxOptimizer" />
-    <content url="file://$MODULE_DIR$/../DistCommIF">
-      <excludeFolder url="file://$MODULE_DIR$/../DistCommIF" />
-    </content>
+    <content url="file://$MODULE_DIR$/../DistCommIF" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Maven: com.rabbitmq:amqp-client:5.4.1" level="project" />
