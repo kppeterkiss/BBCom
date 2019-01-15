@@ -405,11 +405,13 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             else if (receivedMsg.startsWith("INSTANTIATE")){
                 String[] sa = receivedMsg.split(" ");
                 String moduleName = sa[1];
+                Type type = new TypeToken<List<String[]>>() {}.getType();
+                String[] moduleArgs = new Gson().fromJson(sa[2],type);
                 String processId = null;
-                if(sa.length>2)
-                     processId = sa[2];
-                String args =receivedMsg.substring(receivedMsg.lastIndexOf(moduleName),receivedMsg.length());
-                String name = this.launchModule(moduleName,args.split(" "),processId);
+                if(sa.length>3)
+                     processId = sa[3];
+               // String args =receivedMsg.substring(receivedMsg.lastIndexOf(moduleName),receivedMsg.length());
+                String name = this.launchModule(moduleName,moduleArgs,processId);
                 System.out.println("INSTANTIATING  "+moduleName+" @ "+to);
                 return name;
 
@@ -580,7 +582,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
                 System.out.println("Adding submap from: "+ sa[1]);
                 HttpConnection c = new Gson().fromJson(sa[1],HttpConnection.class);
                 pendingMapRequests.remove(c);
-                NetworkGraph graph = new Gson().fromJson(s,NetworkGraph.class);
+                NetworkGraph graph = new Gson().fromJson(sa[2],NetworkGraph.class);
                 this.ng.addSubGraph(graph);
             }
         }
@@ -731,7 +733,8 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
 
     @Override
     public String launchRemoteModule(HttpAddress remoteProcessAddress, String moduleName, String[] arguments,String processId) {
-        String message = "INSTANTIATE "+moduleName+String.join(" ",arguments);
+        Type type = new TypeToken<String[]>() {}.getType();
+        String message = "INSTANTIATE "+moduleName+" "+new Gson().toJson(arguments,type)+" "+processId;
         String name = "";
         try {
             name = send(remoteProcessAddress,message,this.peerId);
@@ -882,7 +885,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
     @Override
     public String send(HttpAddress address, String msg, String sender) throws IOException {
 
-        //System.out.println("TO "+httpAddress.getProcessId()+"@"+httpAddress.getHostAddress()+" - MSG sent ->"+msg);
+        System.out.println("TO "+address.getProcessId()+"@"+address.getHostAddress()+" - MSG sent ->"+msg);
         byte[] postDataBytes = msg.getBytes("UTF-8");
         String query = String.format("To=%s",
                 URLEncoder.encode(address.getProcessId(), "UTF-8"));
