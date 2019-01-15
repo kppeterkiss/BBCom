@@ -181,6 +181,8 @@ public class Main {
                     //at the coordinator node we build up the network
                     if(userinput.toUpperCase().equals("BUILD"))
                         c_name = ((SparkHTTPServlet)c).buildNetwork2();
+                    if(userinput.toUpperCase().equals("MAP"))
+                        c.mapNetwork();
                 }
                 ((SparkHTTPServlet)c).shotDownNetwork(c_name);
             }
