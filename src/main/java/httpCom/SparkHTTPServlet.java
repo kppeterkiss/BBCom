@@ -405,7 +405,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
             else if (receivedMsg.startsWith("INSTANTIATE")){
                 String[] sa = receivedMsg.split(" ");
                 String moduleName = sa[1];
-                Type type = new TypeToken<List<String[]>>() {}.getType();
+                Type type = new TypeToken<String[]>() {}.getType();
                 String[] moduleArgs = new Gson().fromJson(sa[2],type);
                 String processId = null;
                 if(sa.length>3)
