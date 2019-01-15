@@ -49,6 +49,15 @@ public class IPChecker {
 
                 }
             }
+
+
+            try(final DatagramSocket socket = new DatagramSocket()){
+                socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+                ip = socket.getLocalAddress().getHostAddress();
+                System.out.println("CURRENT "+ip);
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
             return ip;
         } catch (SocketException e) {
             throw new RuntimeException(e);
