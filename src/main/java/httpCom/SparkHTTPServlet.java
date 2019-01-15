@@ -593,7 +593,7 @@ public class SparkHTTPServlet extends Com<SparkHTTPServlet.HttpConnection,SparkH
                     System.out.println("Sending to: "+ c.httpAddress.toString());
                     //why this
                    // send(c.httpAddress, "MAP_RES " + this.connections.get(this.getName()) + " " +submapJson, "");
-                    send(c.httpAddress, "MAP_RES " + new Gson().toJson(this.connections.get(this.getName()),HttpConnection.class) + " " +submapJson, "");
+                    send(c.httpAddress, "MAP_RES " + new Gson().toJson(this.getProcessConnectionDescriptor(this.getName(),EdgeType.NODE),HttpConnection.class) + " " +submapJson, "");
                     pendingRcvdRequests.remove(c);
                 } catch (IOException e) {
                     e.printStackTrace();
